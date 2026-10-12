@@ -1,7 +1,7 @@
 name = "TJLFEP"
 uuid = "d079e620-cbd9-4d56-ad78-ffea50be2e33"
 authors = ["Tom Neiser <neisert@fusion.gat.com>", "Eric Bass <bassem@fusion.gat.com>"]
-version = "2.0.17"
+version = "2.0.18"
 
 [deps]
 Arpack = "7d9fca2a-8960-54d3-9f78-7d1dccf2cb97"
