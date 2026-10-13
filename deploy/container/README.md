@@ -32,7 +32,7 @@ loads automatically.
 One-command setup:
 
 ```bash
-bash <(curl -fsSL https://raw.githubusercontent.com/ProjectTorreyPines/TJLF-EP.jl/master/deploy/container/install_tjlfep_container_nersc.sh)
+bash <(curl -fsSL https://raw.githubusercontent.com/ProjectTorreyPines/TGLFEP.jl/master/deploy/container/install_tjlfep_container_nersc.sh)
 ```
 
 or by hand:

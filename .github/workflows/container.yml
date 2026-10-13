@@ -13,7 +13,7 @@ name: container
 # :latest / :latest-imas move only on release builds (or dispatch with
 # publish_latest) and never point at a -gpu tag.
 #
-# TJLF-EP.jl publishes no GitHub releases (versions are registered straight to
+# TGLFEP.jl publishes no GitHub releases (versions are registered straight to
 # FuseRegistry), so the version job resolves the newest registered version when
 # none is given. The `release` trigger is kept for the day releases exist.
 #

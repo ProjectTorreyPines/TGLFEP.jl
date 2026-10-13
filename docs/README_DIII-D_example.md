@@ -33,11 +33,11 @@ EP-driven modes it excludes (the *entire* `sfmin` reduction below grid, up to ~1
 the edge). Higher-fidelity internal reference tiers (`robust_ad`, and the
 `nbasis`-converged `truth`) sit above `:ad :locate`, which matches them essentially
 bit-for-bit; they are documented for reference in
-[`docs/AD_SOLVERS_AND_SEARCH_BOUNDS.md`](https://github.com/ProjectTorreyPines/TJLFEP.jl/blob/master/docs/AD_SOLVERS_AND_SEARCH_BOUNDS.md).
+[`docs/AD_SOLVERS_AND_SEARCH_BOUNDS.md`](https://github.com/ProjectTorreyPines/TGLFEP.jl/blob/master/docs/AD_SOLVERS_AND_SEARCH_BOUNDS.md).
 
 **Accuracy**: `sfmin(IR)` for all solvers at `N_BASIS=32`:
 
-![sfmin vs radius: Fortran vs grid vs :ad :only vs :ad :locate vs :ad :wide](https://raw.githubusercontent.com/ProjectTorreyPines/TJLFEP.jl/master/docs/plots/ad_wide_accuracy_nb32.png?v=5)
+![sfmin vs radius: Fortran vs grid vs :ad :only vs :ad :locate vs :ad :wide](https://raw.githubusercontent.com/ProjectTorreyPines/TGLFEP.jl/master/docs/plots/ad_wide_accuracy_nb32.png?v=5)
 
 `:ad :locate` (green) drops well below `grid` (grey, which reproduces the blue Fortran
 reference bit-for-bit) and `:ad :only` (orange) into the narrow-width modes at the outer
@@ -46,7 +46,7 @@ in a single pass, within ~1–2× of `:ad :locate` (a mild, conservative over-pr
 e.g. ~1.7× at IR=64) and never below it. Colors and legend order match the node-hours
 plot below for quick cross-reference.
 
-![Node-hours vs N_BASIS](https://raw.githubusercontent.com/ProjectTorreyPines/TJLFEP.jl/master/docs/plots/scan20_timing_wide_lines.png?v=7)
+![Node-hours vs N_BASIS](https://raw.githubusercontent.com/ProjectTorreyPines/TGLFEP.jl/master/docs/plots/scan20_timing_wide_lines.png?v=7)
 
 Absolute node-hours at `N_BASIS=32`, each solver on its fastest layout (Fortran
 `-n 1280` on 10 CPU nodes; `grid`/`:ad :only` on 5 MPS GPU nodes; `:ad
@@ -104,7 +104,7 @@ amortizes. **Rule of thumb: `grid` → MPS, `ad` → threads.**
 
 The `nbasis`-converged `truth` reference tier (validation only, ~34 min for the full
 profile at `N_BASIS=32`) is documented in
-[`docs/AD_SOLVERS_AND_SEARCH_BOUNDS.md`](https://github.com/ProjectTorreyPines/TJLFEP.jl/blob/master/docs/AD_SOLVERS_AND_SEARCH_BOUNDS.md).
+[`docs/AD_SOLVERS_AND_SEARCH_BOUNDS.md`](https://github.com/ProjectTorreyPines/TGLFEP.jl/blob/master/docs/AD_SOLVERS_AND_SEARCH_BOUNDS.md).
 
 Data: `docs/plots/scan20_timing.csv`. Reproduce: grid sweep with
 `dev/timing/submit_timing_vs_nbasis.sh`, AD sweep with

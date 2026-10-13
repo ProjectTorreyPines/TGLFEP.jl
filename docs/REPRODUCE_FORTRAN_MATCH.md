@@ -6,7 +6,7 @@ Validated on Perlmutter CPU (premium QoS). See `FORTRAN_JULIA_COMPARISON.md` for
 
 ```bash
 # TJLFEP depends on registered TJLF >= 1.2.4 (FuseRegistry) — no TJLF checkout needed.
-git clone git@github.com:ProjectTorreyPines/TJLFEP.jl.git TJLFEP
+git clone git@github.com:ProjectTorreyPines/TGLFEP.jl.git TJLFEP
 cd TJLFEP
 ```
 

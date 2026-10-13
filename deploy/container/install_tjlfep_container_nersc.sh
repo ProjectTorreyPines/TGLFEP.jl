@@ -5,7 +5,7 @@
 # squash store when possible, otherwise pulling from ghcr.io). TJLFEP then
 # runs with no Julia install and no compilation:
 #
-#   bash <(curl -fsSL https://raw.githubusercontent.com/ProjectTorreyPines/TJLF-EP.jl/master/deploy/container/install_tjlfep_container_nersc.sh)
+#   bash <(curl -fsSL https://raw.githubusercontent.com/ProjectTorreyPines/TGLFEP.jl/master/deploy/container/install_tjlfep_container_nersc.sh)
 #
 # Optional:
 #   TJLFEP_ENVIRONMENT=v2.0.14        image tag (append -imas / -gpu for those

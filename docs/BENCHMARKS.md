@@ -33,11 +33,11 @@ EP-driven modes it excludes (the *entire* `sfmin` reduction below grid, up to ~1
 the edge). Higher-fidelity internal reference tiers (`robust_ad`, and the
 `nbasis`-converged `truth`) sit above `:ad :locate`, which matches them essentially
 bit-for-bit; they are documented for reference in
-[`docs/AD_SOLVERS_AND_SEARCH_BOUNDS.md`](https://github.com/ProjectTorreyPines/TJLFEP.jl/blob/master/docs/AD_SOLVERS_AND_SEARCH_BOUNDS.md).
+[`docs/AD_SOLVERS_AND_SEARCH_BOUNDS.md`](https://github.com/ProjectTorreyPines/TGLFEP.jl/blob/master/docs/AD_SOLVERS_AND_SEARCH_BOUNDS.md).
 
 **Accuracy**: `sfmin(IR)` for all solvers at `N_BASIS=32`:
 
-![UCP sfmin vs radius: Fortran vs grid vs :ad :only vs :ad :locate vs :ad :wide](https://raw.githubusercontent.com/ProjectTorreyPines/TJLFEP.jl/master/docs/plots/ucp_accuracy_nb32.png?v=1)
+![UCP sfmin vs radius: Fortran vs grid vs :ad :only vs :ad :locate vs :ad :wide](https://raw.githubusercontent.com/ProjectTorreyPines/TGLFEP.jl/master/docs/plots/ucp_accuracy_nb32.png?v=1)
 
 `:grid` (grey) reproduces the Fortran reference (blue) bit-for-bit, and `:ad :only`
 (orange) tracks it closely (the de-quantized `w≥1` value). `:ad :locate` (green) and
@@ -46,7 +46,7 @@ outer radii (IR ≳ 40; ~10× below grid at IR≈117, up to ~16× at IR≈180). 
 stays within ~1–2× of `:ad :locate` and never below it. Colors and legend order match
 the node-hours plot below for quick cross-reference.
 
-![UCP node-hours vs N_BASIS](https://raw.githubusercontent.com/ProjectTorreyPines/TJLFEP.jl/master/docs/plots/ucp_scan20_timing_nodehours.png?v=2)
+![UCP node-hours vs N_BASIS](https://raw.githubusercontent.com/ProjectTorreyPines/TGLFEP.jl/master/docs/plots/ucp_scan20_timing_nodehours.png?v=2)
 
 Absolute node-hours at `N_BASIS=32`, each solver on its fastest layout (Fortran
 `-n 1280` on 10 CPU nodes; `grid`/`:ad :only` on 5 MPS GPU nodes; `:ad

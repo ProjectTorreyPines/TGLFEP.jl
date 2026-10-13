@@ -1,17 +1,17 @@
-[![codecov](https://codecov.io/github/projecttorreypines/tjlfep.jl/graph/badge.svg?token=WIeugjkmVB)](https://codecov.io/github/projecttorreypines/tjlfep.jl)
-![Docs](https://github.com/ProjectTorreyPines/TJLFEP.jl/actions/workflows/make_docs.yml/badge.svg)
+[![codecov](https://codecov.io/github/projecttorreypines/tglfep.jl/graph/badge.svg?token=WIeugjkmVB)](https://codecov.io/github/projecttorreypines/tglfep.jl)
+![Docs](https://github.com/ProjectTorreyPines/TGLFEP.jl/actions/workflows/make_docs.yml/badge.svg)
 
-# TJLFEP.jl
+# TGLFEP.jl
 
-A Julia port of **TGLF-EP**, the energetic-particle (EP) critical-gradient threshold model
-built on [TJLF](https://github.com/ProjectTorreyPines/TJLF.jl) (the Julia port of TGLF).
-TJLFEP scans a scale factor on the EP pressure gradient until a marginally unstable Alfvénic
+**TGLFEP.jl** is the Julia implementation of **TGLF-EP**, the energetic-particle (EP) critical-gradient threshold model
+built on [TGLF.jl](https://github.com/ProjectTorreyPines/TGLF.jl).
+TGLFEP.jl scans a scale factor on the EP pressure gradient until a marginally unstable Alfvénic
 mode appears, yielding the critical EP density/pressure gradients used for EP transport and
 stability studies.
 
 It is a close, jointly-maintained translation of the Fortran GACODE add-on `TGLF-EP`
 (verified against it bit-for-bit), and adds a **CUDA GPU eigensolver** plus Julia-native
-**autodiff (`ad`) solvers**. On the reactor-relevant `UCP_complete` case these make TJLFEP
+**autodiff (`ad`) solvers**. On the reactor-relevant `UCP_complete` case these make TGLFEP.jl
 ~4–8× cheaper in node-hours than the fully MPI-parallel Fortran CPU reference at
 `N_BASIS=32`, and the `ad` solvers resolve the narrow-width (`w<1`) EP-driven Alfvén modes
 that Fortran misses at its default `WIDTH_MIN=1` floor.
@@ -28,7 +28,7 @@ nodes) at `N_BASIS=32` on `UCP_complete`; the GPU advantage grows with the eigen
 (see [`docs/BENCHMARKS.md`](docs/BENCHMARKS.md)). `:ad :locate` is the production default
 (also the `ActorTJLFEP` default in FUSE).
 
-Full API reference: [online documentation](https://projecttorreypines.github.io/TJLFEP.jl/dev).
+Full API reference: [online documentation](https://projecttorreypines.github.io/TGLFEP.jl/dev).
 
 ## Run it on Slurm (Perlmutter)
 
@@ -57,7 +57,7 @@ and troubleshooting.
 
 ## Installation
 
-Requires Julia **1.11+**. TJLFEP depends on registered **TJLF 2.x** (FuseRegistry); no TJLF
+Requires Julia **1.11+**. TGLFEP.jl depends on registered **TGLF.jl 2.x** (FuseRegistry); no TGLF.jl
 checkout is needed.
 
 ```bash
@@ -111,7 +111,7 @@ radius of the spectrum diagnostic (`PROCESS_IN=3`) runs in minutes on a login no
 | Path | Contents |
 |------|----------|
 | `slurm/` | **Start here.** Slurm submit templates + the shared GPU/CPU drivers ([`slurm/README.md`](slurm/README.md)). |
-| `src/` | The TJLFEP package (`module TJLFEP`). |
+| `src/` | The TGLFEP.jl package (`module TJLFEP`). |
 | `ext/` | `TJLFEPIMASExt`: the IMAS/FUSE `dd` entry points, loaded automatically under FUSE. |
 | `examples/` | DIII-D, UCP and ITER cases with inputs and Fortran references ([`examples/README.md`](examples/README.md)). |
 | `build/` | Sysimage bakes only ([`build/README.md`](build/README.md)). |
@@ -141,6 +141,6 @@ solver design and search bounds: [`docs/AD_SOLVERS_AND_SEARCH_BOUNDS.md`](docs/A
 
 ## Citation
 
-If this software contributes to an academic publication, please cite it as follows:
+If this software contributes to an academic publication, please refer to it as **TGLFEP.jl** and cite it as follows:
 
 > T.F. Neiser, D. Sun, B. Agnew, T. Slendebroek, O. Meneghini, B.C. Lyons, A. Ghiozzi, J. McClenaghan, G. Staebler and J. Candy, _TJLF: The quasi-linear model of gyrokinetic transport TGLF translated to Julia_, APS Meeting Abstracts (2024)

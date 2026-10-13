@@ -126,7 +126,7 @@ RUN chmod -R a+rX /opt/tjlfep/.julia/registries
 
 # Links the GHCR package to this repository (kept last: label-only changes
 # then rebuild from cache in seconds).
-LABEL org.opencontainers.image.source="https://github.com/ProjectTorreyPines/TJLF-EP.jl" \
+LABEL org.opencontainers.image.source="https://github.com/ProjectTorreyPines/TGLFEP.jl" \
       org.opencontainers.image.description="TJLFEP (kinetic-EP critical-gradient model) with TJLF and CUDA, standalone file-based workflows, CPU+GPU"
 
 WORKDIR /root

@@ -25,7 +25,7 @@ case "$variant" in
 esac
 
 # Resolve the image tag: explicit override, else the highest version registered
-# in FuseRegistry (TJLF-EP.jl has no GitHub releases; FuseRegistry registers by
+# in FuseRegistry (TGLFEP.jl has no GitHub releases; FuseRegistry registers by
 # git-tree-sha, so the registry is the source of truth for released versions).
 if [[ -n "${TJLFEP_ENVIRONMENT:-}" ]]; then
     version="$TJLFEP_ENVIRONMENT"
