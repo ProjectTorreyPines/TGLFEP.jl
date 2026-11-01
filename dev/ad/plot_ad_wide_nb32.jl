@@ -3,11 +3,14 @@
 # sfmin (critical IR factor) vs radial grid index, in the SAME legend order and per-solver
 # colors as the node-hours timing plot (dev/timing/plot_scan20_timing_wide.jl) so the two
 # figures cross-reference at a glance:
-#   * Fortran (CPU reference; SFmin block from fortran_runs/53155032/out.TGLFEP)
+#   * Fortran (CPU -n 1280 reference; SFmin block from timing_runs/fortran_scan20_n1280_nb32_<jobid>/out.TGLFEP)
 #   * Julia :grid       the Fortran-equivalent w>=1 grid solver (reproduces Fortran bit-for-bit)
 #   * Julia :ad :only   the bare w>=1 AD approximation of grid (fast-turnaround; no width extension)
-#   * Julia :ad :locate the width-extended AD solver (multistart locate-grid; faithful narrow-AE value, default)
+#   * Julia :ad :locate the width-extended AD solver (multistart locate-grid; faithful extended-width value, default)
 #   * Julia :ad :wide   the fast single-pass width-aware AD mode (extend_mode=:wide, wide_kdesc=2)
+# Both extended solvers search down to the ballooning-width physics floor WIDTH_FLOOR = 0.5 (2026-10 runs).
+# Sources are pinned per job id (dev/d3d_nb32_scan20_<solver>_<jobid>_tasks/sfmin_scan.txt, merged 20-radius
+# outputs of slurm/tjlfep_gpu_{5N,backfill}.sbatch); override any of them with the environment variables below.
 # Shows that :wide recovers nearly all of :ad :locate's narrow-width accuracy that the w>=1 grid
 # misses, at a fraction of the cost (see node-hours-vs-nbasis plot). The internal robust_ad/truth
 # reference tiers (matched bit-for-bit by :ad :locate) are documented in
@@ -31,7 +34,7 @@ read_sfmin(p) = begin
 end
 
 # Fortran SFmin(IR) reference: the `SFmin` block in the nb=32 SCAN_N=20 out.TGLFEP.
-const FORT = joinpath(BUILD, "fortran_runs", "53155032", "out.TGLFEP")
+const FORT = get(ENV, "D3D_FORTRAN_OUT", joinpath(BUILD, "timing_runs", "fortran_scan20_n1280_nb32_60226283", "out.TGLFEP"))
 read_fortran_sfmin(p) = begin
     vals = Float64[]; inblk = false
     for ln in eachline(p)
@@ -48,13 +51,13 @@ end
 
 # Julia solvers, in the shared legend order / colors used by the timing plot.
 series = [
-    ("Julia :grid (GPU)", joinpath(BUILD, "gacode_nb32_scan20_jgpu_53859063_tasks", "sfmin_scan.txt"),
+    ("Julia :grid (GPU)", get(ENV, "D3D_GRID_SFMIN", joinpath(BUILD, "d3d_nb32_scan20_grid_60226408_tasks", "sfmin_scan.txt")),
         :gray55, :dash, :diamond),
-    ("Julia :ad :only (GPU)", joinpath(BUILD, "ad", "ad_threads_sfmin_nb32_ad_only.txt"),
+    ("Julia :ad :only (GPU)", get(ENV, "D3D_ONLY_SFMIN", joinpath(BUILD, "d3d_nb32_scan20_ad_only_60639930_tasks", "sfmin_scan.txt")),
         :darkorange, :dot, :rect),
-    ("Julia :ad :locate (GPU, default)", joinpath(BUILD, "gacode_nb32_scan20_jgpu_ad_54949227_tasks", "sfmin_scan.txt"),
+    ("Julia :ad :locate (GPU, default)", get(ENV, "D3D_LOCATE_SFMIN", joinpath(BUILD, "d3d_nb32_scan20_ad_locate_60416815_tasks", "sfmin_scan.txt")),
         :seagreen, :solid, :utriangle),
-    ("Julia :ad :wide (GPU)", joinpath(BUILD, "gacode_nb32_scan20_1node_ad_54979250_tasks", "sfmin_scan.txt"),
+    ("Julia :ad :wide (GPU)", get(ENV, "D3D_WIDE_SFMIN", joinpath(BUILD, "d3d_nb32_scan20_ad_wide_60639942_tasks", "sfmin_scan.txt")),
         :firebrick, :solid, :star5),
 ]
 
