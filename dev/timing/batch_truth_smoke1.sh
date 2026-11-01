@@ -47,9 +47,9 @@ echo "=== truth plumbing smoke: SCAN_INDEX=${SCAN_INDEX} SOLVER=truth INNER=${IN
 nvidia-smi -L 2>/dev/null | head -1 || true
 
 srun --export=ALL --label -n 1 --ntasks-per-node=1 --cpu-bind=cores \
-    ${TJLFEP_ROOT}/slurm/${TJLFEP_ROOT}/slurm/common/mps-scan-wrapper.sh \
+    ${TJLFEP_ROOT}/slurm/common/mps-scan-wrapper.sh \
     stdbuf -oL -eL julia --startup-file=no --project="${TJLFEP_ROOT}" \
-    -t "${JULIA_WORKER_THREADS}" ${TJLFEP_ROOT}/slurm/${TJLFEP_ROOT}/slurm/common/run_gacode_scan20_mps_task.jl
+    -t "${JULIA_WORKER_THREADS}" ${TJLFEP_ROOT}/slurm/common/run_gacode_scan20_mps_task.jl
 
 srun --export=ALL -n 1 --ntasks-per-node=1 \
     bash -c 'echo quit | nvidia-cuda-mps-control 2>/dev/null || true' || true

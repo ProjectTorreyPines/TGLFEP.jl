@@ -65,10 +65,10 @@ nvidia-smi -L 2>/dev/null | head -4 || true
 
 T0=$(date +%s.%N)
 srun --export=ALL --label -n "${SLURM_NTASKS:-20}" --ntasks-per-node=4 --cpu-bind=cores \
-    ${TJLFEP_ROOT}/slurm/${TJLFEP_ROOT}/slurm/common/mps-scan-wrapper.sh \
+    ${TJLFEP_ROOT}/slurm/common/mps-scan-wrapper.sh \
     stdbuf -oL -eL julia --startup-file=no --project="${TJLFEP_ROOT}" \
     "${MASTER_SYSIMG_ARGS[@]}" \
-    -t "${JULIA_WORKER_THREADS}" ${TJLFEP_ROOT}/slurm/${TJLFEP_ROOT}/slurm/common/run_gacode_scan20_mps_task.jl
+    -t "${JULIA_WORKER_THREADS}" ${TJLFEP_ROOT}/slurm/common/run_gacode_scan20_mps_task.jl
 T1=$(date +%s.%N)
 SCAN_S=$(python3 -c "print(f'{float(\"${T1}\") - float(\"${T0}\"): .3f}')")
 echo "TIMING_RESULT backend=julia device=gpu solver=ad-wide kdesc=${AD_WIDE_KDESC} phase=scan seconds=${SCAN_S} SCAN_N=20 N_BASIS=${NB} nodes=${SLURM_NNODES:-5} tasks=${SLURM_NTASKS:-20}"
@@ -79,7 +79,7 @@ srun --export=ALL -n "${SLURM_NNODES:-5}" --ntasks-per-node=1 \
 export USE_GPU=0
 T0=$(date +%s.%N)
 stdbuf -oL -eL julia --startup-file=no --project="${TJLFEP_ROOT}" \
-    "${MASTER_SYSIMG_ARGS[@]}" -t 8 ${TJLFEP_ROOT}/slurm/${TJLFEP_ROOT}/slurm/common/merge_gacode_scan20_array.jl
+    "${MASTER_SYSIMG_ARGS[@]}" -t 8 ${TJLFEP_ROOT}/slurm/common/merge_gacode_scan20_array.jl
 T1=$(date +%s.%N)
 MERGE_S=$(python3 -c "print(f'{float(\"${T1}\") - float(\"${T0}\"): .3f}')")
 echo "TIMING_RESULT backend=julia device=gpu solver=ad-wide phase=merge seconds=${MERGE_S} SCAN_N=20 N_BASIS=${NB}"

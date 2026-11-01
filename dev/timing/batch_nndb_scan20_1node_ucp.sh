@@ -80,10 +80,10 @@ nvidia-smi -L 2>/dev/null | head -4 || true
 
 T0=$(date +%s.%N)
 srun --export=ALL --label -N 1 -n 4 --ntasks-per-node=4 --cpu-bind=cores \
-    ${TJLFEP_ROOT}/slurm/${TJLFEP_ROOT}/slurm/common/mps-scan-wrapper.sh \
+    ${TJLFEP_ROOT}/slurm/common/mps-scan-wrapper.sh \
     stdbuf -oL -eL julia --startup-file=no --project="${TJLFEP_ROOT}" \
     "${MASTER_SYSIMG_ARGS[@]}" \
-    -t "${JULIA_WORKER_THREADS}" ${TJLFEP_ROOT}/slurm/${TJLFEP_ROOT}/slurm/common/run_gacode_scan20_mps_task.jl
+    -t "${JULIA_WORKER_THREADS}" ${TJLFEP_ROOT}/slurm/common/run_gacode_scan20_mps_task.jl
 T1=$(date +%s.%N)
 SCAN_S=$(python3 -c "print(f'{float(\"${T1}\") - float(\"${T0}\"): .3f}')")
 echo "TIMING_RESULT backend=julia device=gpu solver=${SOLVER} mode=${AD_EXTEND_MODE} phase=scan seconds=${SCAN_S} SCAN_N=20 N_BASIS=${NB} nodes=1 tasks=4 case=ucp"
@@ -93,7 +93,7 @@ srun --export=ALL -N 1 -n 1 --ntasks-per-node=1 \
 
 export USE_GPU=0
 stdbuf -oL -eL julia --startup-file=no --project="${TJLFEP_ROOT}" \
-    "${MASTER_SYSIMG_ARGS[@]}" -t 8 ${TJLFEP_ROOT}/slurm/${TJLFEP_ROOT}/slurm/common/merge_gacode_scan20_array.jl
+    "${MASTER_SYSIMG_ARGS[@]}" -t 8 ${TJLFEP_ROOT}/slurm/common/merge_gacode_scan20_array.jl
 echo "merged -> ${OUT_DIR}/sfmin_scan.txt"
 
 JOB_T1=$(date +%s.%N)

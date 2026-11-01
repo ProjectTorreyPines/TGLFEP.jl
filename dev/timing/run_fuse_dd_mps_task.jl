@@ -20,7 +20,10 @@ using Pkg
 
 const TJLFEP_ROOT = get(ENV, "TJLFEP_ROOT", normpath(@__DIR__, "..", ".."))
 const FUSE_ROOT = get(ENV, "FUSE_ROOT", normpath(TJLFEP_ROOT, "..", "FUSE"))
-Pkg.activate(FUSE_ROOT)
+# FUSE_PROJECT (fuse_actor_spmd.sbatch: the floored master env dev/timing/aps2026/fuse_env_f05) wins over the FUSE
+# checkout; a bare Pkg.activate(FUSE_ROOT) here silently overrode --project and loaded the registered TJLFEP 2.0.18
+# (no WIDTH_FLOOR) in all 20 masters of job 60626960 -> caught by the floor guard below.
+Pkg.activate(get(ENV, "FUSE_PROJECT", FUSE_ROOT))
 push!(LOAD_PATH, TJLFEP_ROOT)
 
 @assert get(ENV, "USE_GPU", "") == "1" "run_fuse_dd_mps_task.jl is GPU-only; set USE_GPU=1"
@@ -47,6 +50,43 @@ const TEAM_GPUS = let s = get(ENV, "TEAM_GPUS", get(ENV, "CUDA_VISIBLE_DEVICES",
 end
 const GPU_SYSIMAGE = get(ENV, "TJLFEP_GPU_SYSIMAGE", "")
 const _SYSIMG_FLAGS = (!isempty(GPU_SYSIMAGE) && isfile(GPU_SYSIMAGE)) ? `--sysimage=$(GPU_SYSIMAGE)` : ``
+# Team-worker project. Default = the TJLFEP checkout (JIT). With a prebuilt sysimage the workers must run
+# under the env the image was baked with (<image dir>/env_lean), otherwise a JIT fallback can recompile
+# TJLFEP's deps on the compute node — SimulationParameters -> HDF5_jll fails there (OpenSSL clash,
+# jobs 60382959/60464320, 2026-10-28/29). TJLFEP_WORKER_PROJECT overrides explicitly.
+const WORKER_PROJECT = get(ENV, "TJLFEP_WORKER_PROJECT") do
+    if !isempty(_SYSIMG_FLAGS)
+        env = joinpath(dirname(GPU_SYSIMAGE), "env_lean")
+        isfile(joinpath(env, "Project.toml")) ? env : TJLFEP_ROOT
+    else
+        TJLFEP_ROOT
+    end
+end
+
+# Master loads IMAS + the TJLFEP IMAS extension (preprocess_imas_inputs/runTHD_dd_radius). Loading
+# MUST happen BEFORE the team is spawned: Distributed's package callback replays every `using` the
+# master performs after `addprocs` onto all workers by PkgId, so with this block after the team spawn
+# the TJLFEP-project team workers were made to load (and precompile) IMAS -> HDF5_jll, which fails on
+# the compute-node image (OpenSSL artifact 3.5 vs system libcrypto 3.1.4; job 60382959, 2026-10-28).
+# IMAS + GACODE + TurbulentTransport triggers TJLFEPIMASExt without pulling all of FUSE at JIT;
+# under the baked CFS sysimage these are all instant.
+using IMAS
+import GACODE
+using TurbulentTransport
+using TJLFEP
+using TJLF
+using LinearAlgebra
+# Floor guard (2026-10-31): the per-radius driver runTHD_dd_radius -> _ad_width_floor executes in THIS (master)
+# process, not on the team workers, so the master's TJLFEP must be the floored working tree. --project=FUSE resolves
+# the registered 2.0.18 from the FUSE Manifest (no WIDTH_FLOOR) -> job 60622577 was cancelled. Opt out with
+# TJLFEP_ALLOW_UNFLOORED=1 (pre-floor comparison runs only).
+const _MASTER_FLOOR = isdefined(TJLFEP, :WIDTH_FLOOR) ? TJLFEP.WIDTH_FLOOR : nothing
+println("master TJLFEP=", pkgdir(TJLFEP), " v", pkgversion(TJLFEP), " WIDTH_FLOOR=", something(_MASTER_FLOOR, "none"))
+if get(ENV, "TJLFEP_ALLOW_UNFLOORED", "0") != "1" && _MASTER_FLOOR != 0.5
+    error("master TJLFEP at $(pkgdir(TJLFEP)) (v$(pkgversion(TJLFEP))) has no WIDTH_FLOOR = 0.5; run with " *
+          "--project=dev/timing/aps2026/fuse_env_f05 (FUSE_PROJECT in fuse_actor_spmd.sbatch) or set TJLFEP_ALLOW_UNFLOORED=1")
+end
+BLAS.set_num_threads(1)
 
 if INNER === :mps_team
     base_env = Dict{String,String}()
@@ -62,7 +102,7 @@ if INNER === :mps_team
         env["CUDA_VISIBLE_DEVICES"] = TEAM_GPUS[(w - 1) % length(TEAM_GPUS) + 1]
         # Team workers run the kw-scan eigensolves only -> TJLFEP project (CUDA/TJLF/TJLFEP),
         # NOT FUSE. Matches run_gacode_scan20_mps_task.jl.
-        addprocs(1; exeflags=`--project=$(TJLFEP_ROOT) -t $(THREADS_PER_WORKER) --startup-file=no $(_SYSIMG_FLAGS)`,
+        addprocs(1; exeflags=`--project=$(WORKER_PROJECT) -t $(THREADS_PER_WORKER) --startup-file=no $(_SYSIMG_FLAGS)`,
                  env=env)
     end
     @everywhere workers() begin
@@ -75,16 +115,6 @@ if INNER === :mps_team
     end
 end
 
-# Master loads IMAS + the TJLFEP IMAS extension (preprocess_imas_inputs/runTHD_dd_radius). Loading
-# IMAS + GACODE + TurbulentTransport triggers TJLFEPIMASExt without pulling all of FUSE at JIT;
-# under the baked CFS sysimage these are all instant.
-using IMAS
-import GACODE
-using TurbulentTransport
-using TJLFEP
-using TJLF
-using LinearAlgebra
-BLAS.set_num_threads(1)
 
 const OUT_DIR = get(() -> error("set TJLFEP_OUT_DIR"), ENV, "TJLFEP_OUT_DIR")
 const TASKS_DIR = joinpath(OUT_DIR, "tasks")

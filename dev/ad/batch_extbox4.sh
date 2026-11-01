@@ -36,7 +36,7 @@ nvidia-smi -L 2>/dev/null | head -1 || true
 if [[ "${INNER}" == "mps_team" ]]; then
     export GPUS_PER_RADIUS=1
     srun -n 1 --ntasks-per-node=1 --gpus-per-node=1 \
-        ${TJLFEP_ROOT}/slurm/${TJLFEP_ROOT}/slurm/common/mps-scan-wrapper.sh \
+        ${TJLFEP_ROOT}/slurm/common/mps-scan-wrapper.sh \
         julia --startup-file=no --project="${TJLFEP_ROOT}" \
         -t 4 ad/extbox4_experiment.jl
 else

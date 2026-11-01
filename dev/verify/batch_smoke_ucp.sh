@@ -53,6 +53,6 @@ echo "=== UCP smoke: nb=${NB} scan_index=${SCAN_INDEX} solver=${SOLVER} case=${C
 nvidia-smi -L 2>/dev/null | head -2 || true
 
 stdbuf -oL -eL julia --startup-file=no --project="${TJLFEP_ROOT}" \
-    "${SYSIMG_ARGS[@]}" -t 8 ${TJLFEP_ROOT}/slurm/${TJLFEP_ROOT}/slurm/common/run_gacode_scan20_mps_task.jl
+    "${SYSIMG_ARGS[@]}" -t 8 ${TJLFEP_ROOT}/slurm/common/run_gacode_scan20_mps_task.jl
 
 echo "=== UCP smoke finished; outputs in ${OUT_DIR} ==="
