@@ -5,6 +5,18 @@ This document records the outcome of a study of the autodiff (AD) critical-facto
 (`kyhat`, `width`, `nbasis`) while validating them on the DIII-D `n_scan=20`, `nbasis=32` case
 (`examples/DIIID_202017C42_500ms_v3.1`). All GPU runs used 1×A100 with an MPS worker team of 4.
 
+> **Update (2026-10-27): ballooning-width physics floor `WIDTH_FLOOR = 0.5`.** The eigenvalue-optimal
+> TGLF-EP width should not go below 0.5: narrower Gauss–Hermite envelopes are outside the model's validity, and
+> the APS-2026 campaign found the sub-0.5 optima not `N_BASIS`-converged (SFmin keeps rising 32→56) and,
+> at DIII-D IR 64, unstable without EP drive. TJLFEP therefore clamps every width search to `w ≥ 0.5`:
+> `WIDTH_MIN`/`WIDTH_IN` from `input.TGLFEP` (`enforce_width_floor!`, with a warning) and the AD solvers'
+> `w_lo` (default `width_floor()`; `AD_W_LO` and explicit kwargs are clamped up). Override
+> only for numerical studies with `ENV["TJLFEP_WIDTH_FLOOR"]`. **The `w ≈ 0.1` results quoted below
+> (§4–§6: "~10× more unstable", 2–11× width reductions) were obtained with the pre-floor `w_lo = 0.05` and
+> are kept as the historical record of the search-bounds study; with the floor, the extended search gains
+> 1.0–2.1× on DIII-D and 2–4× at mid-radius on UCP over the Fortran `w ≥ 1` box
+> (`dev/timing/aps2026/RESULTS.md` §4).**
+
 The bottom line up front:
 
 - For the **fast production solver**, `adf1` (pinned-aware seed → `:ad` descent → faithful confirm)

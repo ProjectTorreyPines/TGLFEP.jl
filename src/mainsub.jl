@@ -27,7 +27,8 @@ critical-factor engine (PROCESS_IN=5 only):
     `(ky,w)` lies between coarse nodes (e.g. the plasma edge) at proportionally
     higher cost.
   - `:truth` — the physical-truth route: [`critical_factor_truth`](@ref) extends the
-    `width` search **below** `WIDTH_MIN` (log-spaced down to ~0.05) to capture the
+    `width` search **below** `WIDTH_MIN` (log-spaced down to `w_lo`, default the ballooning-width
+    physics floor `WIDTH_FLOOR` = 0.5) to capture the
     genuine narrow-width EP-driven AEs that the Fortran-faithful `w≥1` box excludes,
     then converges the value in `nbasis` at the located optimum. NOT Fortran-faithful:
     at near-marginal radii it can return a `sfmin` up to ~25× lower (more unstable)
@@ -240,11 +241,13 @@ function _mainsub_ad(inputsEP::Options, inputsPR::profile, printout::Bool; use_g
     ad_confirm = faithful_confirm === nothing ? (get(ENV, "AD_FAITHFUL_CONFIRM", "1") != "0") : faithful_confirm
     ad_mode    = extend_mode === nothing ? Symbol(get(ENV, "AD_EXTEND_MODE", "locate")) : extend_mode
     ad_kdesc   = wide_kdesc === nothing ? parse(Int, get(ENV, "AD_WIDE_KDESC", "2")) : wide_kdesc
+    ad_wlo     = _ad_width_floor(inputsEP, inputsPR)   # narrow-width search floor, never below WIDTH_FLOOR (0.5)
     # :only forces the bare config (no width extension, no faithful confirm).
     ad_extend  = ad_mode !== :only
     ad_confirm = ad_extend ? ad_confirm : false
     res = critical_factor_optimize(inputsEP, inputsPR; use_gpu=use_gpu, faithful_confirm=ad_confirm,
                                    extend_width=ad_extend,
+                                   w_lo=ad_wlo,
                                    extend_mode=(ad_extend ? ad_mode : :locate), wide_kdesc=ad_kdesc,
                                    scan_lo=_ad_factor_floor(Float64(inputsEP.FACTOR_IN), k_max),
                                    inner=inner, team=team)
@@ -277,6 +280,7 @@ function _mainsub_ad(inputsEP::Options, inputsPR::profile, printout::Bool; use_g
         push!(sf_buf, "kymark = $(kymark)")
         push!(sf_buf, "width = $(wmark)")
         push!(sf_buf, "binding = $(bind)")
+        push!(sf_buf, "w_lo = $(ad_wlo)   # narrow-width search floor (>= WIDTH_FLOOR = $(WIDTH_FLOOR); AD_W_LO)")
         push!(sf_buf, "iters = $(res.iters)  evals = $(res.evals)  converged = $(res.converged)")
         if get(res, :extended, false)
             push!(sf_buf, "extended = true  n_ext_confirm = $(get(res, :n_ext_confirm, 0))")
@@ -317,7 +321,8 @@ function _mainsub_robust_ad(inputsEP::Options, inputsPR::profile, printout::Bool
                             team::Union{Nothing,AbstractVector{<:Integer}} = nothing,
                             refine_rounds::Int = 1, k_max::Int = _k_max_env())
     res = critical_factor_robust(inputsEP, inputsPR; use_gpu=use_gpu, k_max=k_max,
-                                 inner=inner, team=team, refine_rounds=refine_rounds)
+                                 inner=inner, team=team, refine_rounds=refine_rounds,
+                                 w_lo=_ad_width_floor(inputsEP, inputsPR))
 
     sfmin  = res.sfmin
     kymark = res.kyhat
@@ -366,7 +371,7 @@ end
 Physical-truth AD-solver branch of [`mainsub`](@ref) (PROCESS_IN==5). Runs
 [`critical_factor_truth`](@ref) — locates the global `(kyhat,width)` minimum of the
 all-filter marginal factor over a width box **extended below `WIDTH_MIN`** (log-spaced
-down to ~0.05) and converges the value in `nbasis` at that optimum — then writes the
+down to `w_lo`, default the physics floor `WIDTH_FLOOR` = 0.5) and converges the value in `nbasis` at that optimum — then writes the
 critical EP scale factor and its marking `(kymark, width)` onto `inputsEP`
 (`FACTOR_IN`, `KYMARK`, `WIDTH_IN`) like the grid path. The reported `sfmin` is the
 nbasis-converged estimate; `sfmin_work` (the value at the working basis) is recorded too.
@@ -386,7 +391,8 @@ function _mainsub_truth(inputsEP::Options, inputsPR::profile, printout::Bool;
     nbw = Int(inputsEP.N_BASIS)
     nb_steps = sort(unique(filter(<=(56), [nbw, nbw + 8, nbw + 16, nbw + 24])))
     res = critical_factor_truth(inputsEP, inputsPR; use_gpu=use_gpu, inner=inner, team=team, k_max=k_max,
-                                nb_work=nbw, nb_steps=nb_steps)
+                                nb_work=nbw, nb_steps=nb_steps,
+                                w_lo=_ad_width_floor(inputsEP, inputsPR))
 
     sfmin  = res.sfmin
     kymark = res.kyhat
@@ -514,4 +520,11 @@ function _mainsub_nlopt(inputsEP::Options, inputsPR::profile, printout::Bool;
     return _finalize_nls_result!(inputsEP, inputsPR, printout, res,
                                  "# TJLFEP derivative-free solver (critical_factor_nlopt: NLopt $(algo) + faithful confirm)";
                                  use_gpu = use_gpu)
+end
+# ── Narrow-width search floor for the extended-width AD solvers (:ad :locate/:wide, :robust_ad, :truth) ──
+# Default: the ballooning-width physics floor `width_floor()` (= WIDTH_FLOOR = 0.5; see tjlfep_modules.jl).
+# Optional environment hook AD_W_LO=<float> (a constant floor), clamped so the search never goes below the
+# physics floor.
+function _ad_width_floor(inputsEP::Options, inputsPR::profile)
+    return floor_w_lo(parse(Float64, get(ENV, "AD_W_LO", string(width_floor()))); what = "AD_W_LO")
 end

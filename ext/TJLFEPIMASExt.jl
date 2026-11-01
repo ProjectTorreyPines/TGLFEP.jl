@@ -92,6 +92,7 @@ function TJLFEP.preprocess_imas_inputs(dd::IMAS.dd, rho::AbstractVector{Float64}
             setfield!(Options, Symbol(key), OptionsDict[key])
         end
     end
+    TJLFEP.enforce_width_floor!(Options)   # ballooning-width physics floor (WIDTH_FLOOR = 0.5)
 
     Options.IR_EXP = fill(0, Options.SCAN_N)
     Options.NMODES = nmodes

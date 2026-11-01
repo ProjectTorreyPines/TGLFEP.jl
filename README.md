@@ -13,15 +13,17 @@ It is a close, jointly-maintained translation of the Fortran GACODE add-on `TGLF
 (verified against it bit-for-bit), and adds a **CUDA GPU eigensolver** plus Julia-native
 **autodiff (`ad`) solvers**. On the reactor-relevant `UCP_complete` case these make TGLFEP.jl
 ~4–8× cheaper in node-hours than the fully MPI-parallel Fortran CPU reference at
-`N_BASIS=32`, and the `ad` solvers resolve the narrow-width (`w<1`) EP-driven Alfvén modes
-that Fortran misses at its default `WIDTH_MIN=1` floor.
+`N_BASIS=32`, and the `ad` solvers resolve the narrower-width (`0.5 ≤ w < 1`) EP-driven Alfvén modes
+that Fortran misses at its default `WIDTH_MIN=1` floor. No width search goes below the TGLF-EP
+ballooning-width physics floor `WIDTH_FLOOR = 0.5` (see
+`docs/AD_SOLVERS_AND_SEARCH_BOUNDS.md`).
 
 **Which solver?** Two axes: match Fortran or improve on it; faithful value or faster approximation.
 
 |                                          | Faithful                                       | Faster approximation                          |
 | ---------------------------------------- | ---------------------------------------------- | --------------------------------------------- |
 | **Match Fortran** (`w≥1` box)            | **`:grid`** reproduces Fortran (**~4.4×**)     | **`:ad :only`** approximates `:grid` (**~8×**) |
-| **Extend Fortran** (adds `w<1` AE modes) | **`:ad :locate`** *(default)* (**~1.7×**)      | **`:ad :wide`** (**~5.4×**)                    |
+| **Extend Fortran** (adds `0.5≤w<1` AE modes) | **`:ad :locate`** *(default)* (**~1.7×**)  | **`:ad :wide`** (**~5.4×**)                    |
 
 Multipliers are node-hours vs the fully MPI-parallel Fortran reference (`-n 1280`, 10 CPU
 nodes) at `N_BASIS=32` on `UCP_complete`; the GPU advantage grows with the eigenmatrix size
@@ -133,7 +135,8 @@ physics-parity notes in [`docs/FORTRAN_JULIA_COMPARISON.md`](docs/FORTRAN_JULIA_
 ## Benchmarks
 
 Node-hours at `N_BASIS=32` on `UCP_complete` (20 radii): Fortran `-n 1280` ≈ 2.47;
-`:ad :only` ≈ 0.31, `:ad :wide` ≈ 0.46, `:grid` ≈ 0.57, `:ad :locate` ≈ 1.49. The GPU margin
+`:ad :only` ≈ 0.31, `:ad :wide` ≈ 0.46, `:grid` ≈ 0.57, `:ad :locate` ≈ 1.49 (measured before
+the width floor; the extended-width rows are being re-measured). The GPU margin
 grows with `N_BASIS` (break-even near 16, ~8× at 48), and stock Fortran TGLF cannot run
 `N_BASIS>32` without a rebuild. Tables, plots, accuracy comparison and the DIII-D case:
 [`docs/BENCHMARKS.md`](docs/BENCHMARKS.md), [`docs/README_DIII-D_example.md`](docs/README_DIII-D_example.md);

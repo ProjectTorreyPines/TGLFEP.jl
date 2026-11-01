@@ -24,6 +24,7 @@ end
     include("unit_structs.jl")
     include("unit_io.jl")
     include("unit_extra.jl")
+    include("unit_width_floor.jl")
     include("unit_ad_smoke.jl")
 
     # Small multi-radius scan + finalize (mirror of FUSE's ActorTJLFEP smoke test).

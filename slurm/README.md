@@ -31,15 +31,19 @@ nodes = 2.47 node-hours; full tables in [`docs/BENCHMARKS.md`](../docs/BENCHMARK
 | `SOLVER` | Width box | Template | `INNER` | node-h | What you get |
 |---|---|---|---|---:|---|
 | `grid` | `w >= 1` | gpu_5N | `mps_team` | 0.57 | The Fortran-equivalent `(kyhat x width x factor)` sweep. **Reproduces Fortran `SFmin`.** |
-| `ad` + `AD_EXTEND_MODE=only` | `w >= 1` | gpu_5N | `threads` | 0.31 | De-quantized approximation of `grid`. Fast iteration only; misses the narrow `w<1` modes. |
-| `ad` + `AD_EXTEND_MODE=locate` **(default)** | extended | gpu_backfill | `mps_team` | 1.49 | Adds the narrow-width (`w<1`) EP-driven Alfven modes Fortran misses; the faithful narrow-width value. Production / `ActorTJLFEP` default. |
+| `ad` + `AD_EXTEND_MODE=only` | `w >= 1` | gpu_5N | `threads` | 0.31 | De-quantized approximation of `grid`. Fast iteration only; misses the narrower `0.5 <= w < 1` modes. |
+| `ad` + `AD_EXTEND_MODE=locate` **(default)** | extended | gpu_backfill | `mps_team` | 1.49 | Adds the narrower-width (`0.5 <= w < 1`, never below the physics floor `WIDTH_FLOOR = 0.5`) EP-driven Alfven modes Fortran misses; the faithful extended-width value. Production / `ActorTJLFEP` default. |
 | `ad` + `AD_EXTEND_MODE=wide` | extended | gpu_backfill | `mps_team` | 0.46 | One log-seeded narrow-width pass: ~3x cheaper than `locate`, conservative (within 1-2x of it, never below). Bulk NN-database generation. |
 | `robust_ad`, `truth` | extended | gpu_backfill | `mps_team` | higher | Reference tiers above `locate` (`truth` adds an `N_BASIS` ladder; ~34 min per DIII-D profile at nb32). Validation only. |
 | `grid` on CPU | `w >= 1` | cpu_10N / cpu_1N | pmap | 14.6 | Same result as GPU `grid`, ~25x the node-hours. |
 
+The node-hours of the extended-width rows were measured with the pre-2026-10 search floor `w_lo = 0.05`.
+With the ballooning-width physics floor `WIDTH_FLOOR = 0.5` as the code default the extended solvers search a
+bounded box (cheaper, and 1-4x rather than up to 16x below `grid`); re-measured values follow.
+
 Why the split: `grid` and `ad :only` cost about the same at every radius, so spreading 20
 radii over 5 nodes finishes in one wave at no extra node-hours. The extended-width solvers
-spend far longer on the outer radii (that is where the `w<1` locate triggers), so a fixed
+spend far longer on the outer radii (that is where the `0.5 <= w < 1` locate triggers), so a fixed
 20-task split would leave four nodes idle waiting on the edge; one node whose four GPUs keep
 pulling the next radius from a queue gives the lowest node-hours, and a 1-node job also
 backfills quickly in the Slurm queue.
@@ -47,7 +51,7 @@ backfills quickly in the Slurm queue.
 `INNER` is set for you: the 5N template pairs `ad :only` with in-process threads and everything
 else with an MPS worker team (`MPS_TEAM=8` processes per GPU); the backfill template uses
 `mps_team` for every solver. That is not just inherited from the published numbers: measured
-on the backfill template with UCP `N_BASIS=32`, `ad :locate` (2026-10-03), `mps_team` 8x2 took
+on the backfill template with UCP `N_BASIS=32`, `ad :locate` (2026-10-03, before the width floor), `mps_team` 8x2 took
 1.49 node-hours, `threads` x2 2.72 and `threads` x16 2.60, with `SFmin` agreeing to within 0.3 %
 (the two layouts partition the narrow-width search differently, so the located optimum can
 shift slightly).

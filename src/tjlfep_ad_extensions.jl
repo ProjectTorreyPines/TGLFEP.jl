@@ -1089,13 +1089,14 @@ structurally misses the narrow EP-driven AE modes (`w≪1`) that set the true
 critical factor at near-marginal radii (the canonical `w≥1` box biases `sfmin`
 high there — up to ~25× at the steep profile edge). When `extend_width=true` the
 solver additionally runs [`_locate_extended`](@ref) — a cheap log-spaced `(ky,w)`
-AE-onset rank (down to `w_lo=0.05`, `ky_lo=0.05`) → `:ad` descent → faithful
+AE-onset rank (down to `w_lo` — default [`width_floor`](@ref) = 0.5, never below it — and `ky_lo=0.05`) → `:ad` descent → faithful
 early-stop confirm — and folds any LOWER faithful onset into the result. This is
 the SAME width-extension machinery `:robust_ad` uses, but seeded on the cheap `:ad`
 descent instead of a full faithful `w≥1` grid-zoom, so it is much cheaper than
 `:robust_ad` (no faithful grid) while recovering most of the narrow-width accuracy
 gain over the Fortran/grid `w≥1` baseline. The `w≥1` descent is retained as a floor
-(AD descent can under-resolve the dense core). Extension knobs: `w_lo=0.05`,
+(AD descent can under-resolve the dense core). Extension knobs: `w_lo=width_floor()` (0.5; lower
+values are clamped up to the physics floor),
 `ky_lo=0.05`, `nseed_ky_ext=6`, `nseed_w_ext=10`, `n_eig_seed=12`, `k_descend=6`.
 It does NOT alter the default (`extend_width=false`) behavior, so
 [`_locate_extended`](@ref)'s own inner `:ad` descents (which pass it unset)
@@ -1146,7 +1147,7 @@ function critical_factor_optimize(inputsEP::Options{Float64}, inputsPR::profile{
                                   maxiter::Int = 20, gtol::Float64 = 1.0e-4, xtol::Float64 = 1.0e-5,
                                   step0::Float64 = 0.25, nbacktrack::Int = 8,
                                   faithful_confirm::Bool = false,
-                                  extend_width::Bool = false, w_lo::Float64 = 0.05, ky_lo::Float64 = 0.05,
+                                  extend_width::Bool = false, w_lo::Float64 = width_floor(), ky_lo::Float64 = 0.05,
                                   nseed_ky_ext::Int = 6, nseed_w_ext::Int = 10,
                                   n_eig_seed::Int = 12, k_descend::Int = 6,
                                   extend_mode::Symbol = :locate, wide_kdesc::Int = 2,
@@ -1155,6 +1156,7 @@ function critical_factor_optimize(inputsEP::Options{Float64}, inputsPR::profile{
                                   use_gpu::Bool = false, verbose::Bool = false)
     gth = gamma_thresh === nothing ? _gamma_thresh_for(inputsEP, inputsPR) : gamma_thresh
     shi = scan_hi === nothing ? Float64(inputsEP.FACTOR_IN) : scan_hi
+    w_lo = floor_w_lo(w_lo)   # ballooning-width physics floor (WIDTH_FLOOR = 0.5)
     wlo, whi = w_bounds === nothing ? (Float64(inputsEP.WIDTH_MIN), Float64(inputsEP.WIDTH_MAX)) : w_bounds
     kylo, kyhi = ky_bounds
 
@@ -1491,7 +1493,8 @@ brute path at near-degenerate radii. Prefer it for CPU/serial runs or with `adap
 
 Keywords: `nkyhat=4, nefwid=8`, `refine_rounds=1`, `adaptive=true`, `confirm_grid=false`, `outer=:grid_zoom`,
 `feasible_frac=0.35`, `cap_frac=0.5`, `improve_tol=0.02`, `extend_width=true`, `ky_lo=0.05`,
-`w_lo=0.05`, `nseed_ky=6`, `nseed_w=10`, `n_eig_seed=12`, `k_descend=6`, `gamma_thresh=nothing`
+`w_lo=width_floor()` (0.5, the physics floor; lower values are clamped), `nseed_ky=6`, `nseed_w=10`,
+`n_eig_seed=12`, `k_descend=6`, `gamma_thresh=nothing`
 (case γ*), `scan_lo=nothing`(→`scan_hi/(nfactor·4^(k_max-1))`, the grid floor; `scan_hi/512` at k_max=4),
 `scan_hi=nothing`(→`FACTOR_IN`), `inner=:threads`, `team=nothing`, `use_gpu=false`,
 `verbose=false`. The `(ky,w)` points are parallelized over the team/threads; each
@@ -1516,7 +1519,7 @@ function critical_factor_robust(inputsEP::Options{Float64}, inputsPR::profile{Fl
                                        feasible_frac::Float64 = 0.35, cap_frac::Float64 = 0.5,
                                        improve_tol::Float64 = 0.02,
                                        extend_width::Bool = true,
-                                       ky_lo::Float64 = 0.05, w_lo::Float64 = 0.05,
+                                       ky_lo::Float64 = 0.05, w_lo::Float64 = width_floor(),
                                        nseed_ky::Int = 6, nseed_w::Int = 10,
                                        n_eig_seed::Int = 12, k_descend::Int = 6,
                                        gamma_thresh::Union{Nothing,Float64} = nothing,
@@ -1536,6 +1539,7 @@ function critical_factor_robust(inputsEP::Options{Float64}, inputsPR::profile{Fl
     slo = scan_lo === nothing ? _ad_factor_floor(shi, k_max) : scan_lo
     wlo = Float64(inputsEP.WIDTH_MIN); whi = Float64(inputsEP.WIDTH_MAX)
     kylo = 0.0; kyhi = 1.0
+    w_lo = floor_w_lo(w_lo)   # ballooning-width physics floor (WIDTH_FLOOR = 0.5)
 
     total_full = 0; total_eig = 0; npts_total = 0
     # Phase-level eigensolve breakdown (diagnostic: locate where the high-γ* eig cost lives).
@@ -2038,6 +2042,9 @@ end
 # ════════════════════════════════════════════════════════════════════════════════════════════════
 # Extended-box + separable-nbasis "truth" protocol for the critical EP scale factor.
 #
+# NOTE (2026-10): the ballooning-width physics floor WIDTH_FLOOR = 0.5 now bounds every width search
+# (w_lo defaults to width_floor() and lower requests are clamped); the w ≈ 0.1 optima described below were
+# found with the pre-floor w_lo = 0.05 and lie outside the model's validity (historical record).
 # Near-marginal radii hide their true sfmin minimum at NARROW width (w≈0.1), BELOW the canonical
 # WIDTH_MIN=1.0, as an INTERIOR bowl (sfmin turns back up below w≈0.05); nbasis at that optimum
 # converges geometrically (limit by nb≈48, the basis being rank-singular by nb≈64). The canonical
@@ -2223,7 +2230,7 @@ function _locate_extended(ep0, prof; gth, slo, shi, ky_lo, w_lo, w_hi,
 end
 
 """
-    critical_factor_truth(inputsEP, inputsPR; ky_lo=0.05, w_lo=0.05, nseed_ky=6, nseed_w=10,
+    critical_factor_truth(inputsEP, inputsPR; ky_lo=0.05, w_lo=width_floor(), nseed_ky=6, nseed_w=10,
                           nb_work=32, nb_steps=[32,40,48,56], inner=:threads, team=nothing,
                           use_gpu=false) -> NamedTuple
 
@@ -2248,7 +2255,7 @@ the floor, `sfmin_work` the `robust_ad` value at `nb_work`, and `floored` whethe
 """
 function critical_factor_truth(ep0, prof; gamma_thresh=nothing, scan_lo=nothing, scan_hi=nothing,
                                k_max::Int=_k_max_env(),
-                               ky_lo::Float64=0.05, w_lo::Float64=0.05,
+                               ky_lo::Float64=0.05, w_lo::Float64=width_floor(),
                                nseed_ky::Int=6, nseed_w::Int=10, n_eig_seed::Int=12, k_descend::Int=6,
                                confirm_grid::Bool=false,
                                nb_work::Int=32, nb_steps::Vector{Int}=[32, 40, 48, 56],
@@ -2258,6 +2265,7 @@ function critical_factor_truth(ep0, prof; gamma_thresh=nothing, scan_lo=nothing,
     gth = gamma_thresh === nothing ? _gamma_thresh_for(ep0, prof) : gamma_thresh
     shi = scan_hi === nothing ? Float64(ep0.FACTOR_IN) : scan_hi
     slo = scan_lo === nothing ? _ad_factor_floor(shi, k_max) : scan_lo
+    w_lo = floor_w_lo(w_lo)   # ballooning-width physics floor (WIDTH_FLOOR = 0.5)
 
     # ── Tier-2: locate the production (ky,w) optimum with the width-extended robust solver at
     # nb_work. This is the SAME object as solver=:robust_ad — min of the canonical w≥1 grid-zoom

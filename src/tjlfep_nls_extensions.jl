@@ -18,7 +18,8 @@
 # same surface `:grid`'s kwscale_scan ranks on — are the right tool, so the DFSane route was
 # removed; use `:multistart` (local BOBYQA/SBPLX/Nelder-Mead) or `:nlopt` instead.
 #
-# All solvers search the width box EXTENDED below WIDTH_MIN (down to `w_lo`≈0.05, like :ad :locate /
+# All solvers search the width box EXTENDED below WIDTH_MIN (down to `w_lo`, default the ballooning-width
+# physics floor `width_floor()` = 0.5 — never below it — like :ad :locate /
 # :robust_ad) to capture the narrow EP-driven AE modes the `w≥1` box misses, then faithful-confirm
 # (IFLUX=true) the candidate optima with an early-stop bound. They return the SAME contract as
 # `critical_factor_robust`/`critical_factor_direct` so the `_mainsub_*` branches consume them
@@ -146,7 +147,7 @@ onset surface `f1(ky,w)` is multimodal, so global-ness comes from the multistart
      (`_confirm_candidates`) → the critical factor.
 
 Keywords: `local_algo=:LN_BOBYQA`, `gamma_thresh=nothing`, `scan_lo=nothing`(→`shi/(nfactor·4^(k_max-1))`; `shi/512` at k_max=4),
-`scan_hi=nothing`(→`FACTOR_IN`), `ky_lo=0.05`, `w_lo=0.05`, `nseed_ky=6`, `nseed_w=10`,
+`scan_hi=nothing`(→`FACTOR_IN`), `ky_lo=0.05`, `w_lo=width_floor()` (0.5), `nseed_ky=6`, `nseed_w=10`,
 `n_eig_seed=12`, `n_eig=16`, `k_descend=3`, `local_evals=15`, `max_confirm=8`,
 `inner=:threads`, `team=nothing`, `use_gpu=false`, `verbose=false`.
 The faithful confirm is the wall-time driver: `max_confirm` hard-caps it (the early-stop prune
@@ -161,7 +162,7 @@ function critical_factor_multistart(ep0::Options{Float64}, prof::profile{Float64
                                     scan_lo::Union{Nothing,Float64} = nothing,
                                     scan_hi::Union{Nothing,Float64} = nothing,
                                     k_max::Int = _k_max_env(),
-                                    ky_lo::Float64 = 0.05, w_lo::Float64 = 0.05,
+                                    ky_lo::Float64 = 0.05, w_lo::Float64 = width_floor(),
                                     nseed_ky::Int = 6, nseed_w::Int = 10, n_eig_seed::Int = 12,
                                     n_eig::Int = 16, k_descend::Int = 3, local_evals::Int = 15,
                                     max_confirm::Int = 8,
@@ -170,6 +171,7 @@ function critical_factor_multistart(ep0::Options{Float64}, prof::profile{Float64
     gth = gamma_thresh === nothing ? _gamma_thresh_for(ep0, prof) : gamma_thresh
     shi = scan_hi === nothing ? Float64(ep0.FACTOR_IN) : scan_hi
     slo = scan_lo === nothing ? _ad_factor_floor(shi, k_max) : scan_lo
+    w_lo = floor_w_lo(w_lo)   # ballooning-width physics floor (WIDTH_FLOOR = 0.5)
     kylo, kyhi = ky_lo, 1.0
     wlo, whi = w_lo, Float64(ep0.WIDTH_MAX)
 
@@ -257,7 +259,7 @@ algorithm and an optional local polish:
   3. Faithful-confirm (`IFLUX=true`) the sampled points in ascending cheap order with early stop.
 
 Keywords: `algo=:GN_DIRECT_L`, `local_algo=:LN_BOBYQA`, `max_evals=40`, `local_evals=20`,
-`gamma_thresh=nothing`, `scan_lo=nothing`, `scan_hi=nothing`, `ky_lo=0.05`, `w_lo=0.05`,
+`gamma_thresh=nothing`, `scan_lo=nothing`, `scan_hi=nothing`, `ky_lo=0.05`, `w_lo=width_floor()` (0.5),
 `n_eig=16`, `inner=:threads`, `team=nothing`, `use_gpu=false`, `verbose=false`.
 
 Returns the same contract as [`critical_factor_multistart`](@ref).
@@ -269,12 +271,13 @@ function critical_factor_nlopt(ep0::Options{Float64}, prof::profile{Float64};
                                scan_lo::Union{Nothing,Float64} = nothing,
                                scan_hi::Union{Nothing,Float64} = nothing,
                                k_max::Int = _k_max_env(),
-                               ky_lo::Float64 = 0.05, w_lo::Float64 = 0.05, n_eig::Int = 16,
+                               ky_lo::Float64 = 0.05, w_lo::Float64 = width_floor(), n_eig::Int = 16,
                                inner::Symbol = :threads, team = nothing,
                                use_gpu::Bool = false, verbose::Bool = false)
     gth = gamma_thresh === nothing ? _gamma_thresh_for(ep0, prof) : gamma_thresh
     shi = scan_hi === nothing ? Float64(ep0.FACTOR_IN) : scan_hi
     slo = scan_lo === nothing ? _ad_factor_floor(shi, k_max) : scan_lo
+    w_lo = floor_w_lo(w_lo)   # ballooning-width physics floor (WIDTH_FLOOR = 0.5)
     kylo, kyhi = ky_lo, 1.0
     wlo, whi = w_lo, Float64(ep0.WIDTH_MAX)
     co = _make_cheap_objective(ep0, prof, gth; slo = slo, shi = shi, n_eig = n_eig,

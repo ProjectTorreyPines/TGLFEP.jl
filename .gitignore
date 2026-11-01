@@ -53,3 +53,7 @@ dev/**/probe_*/
 dev/**/eigvec_ab_*/
 dev/**/mps*_*/
 dev/**/.layout_jobids
+
+# APS-DPP 2026 campaign material (maintainer-local: runs, logs, figures, deck, input copies,
+# floored FUSE/sysimage environments). Regenerated from dev/ scripts; not shipped.
+**/aps2026/

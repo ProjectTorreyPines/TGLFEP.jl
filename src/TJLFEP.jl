@@ -89,6 +89,7 @@ FUSE/IMAS); a `MethodError` is raised if the extension is not loaded.
 function runTHD_dd_radius end
 
 export profile, Options, InputTJLF  # InputTJLF is TJLF.InputTJLF (single consolidated type)
+export WIDTH_FLOOR, width_floor, enforce_width_floor!
 export readMTGLF, readTGLFEP, TJLF_map, readEXPRO, save_TGLFEP, save_MTGLF, save_EXPRO, save_all
 export read_input_profile, readprofile, expro_dict_from_profile, ir_exp_from_scan, setup_fortran_file_inputs, setup_gacode_file_inputs, profile_from_gacode
 export expro_vectors_from_gacode, preprocess_gacode_inputs

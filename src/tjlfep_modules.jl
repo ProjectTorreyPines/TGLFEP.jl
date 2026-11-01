@@ -140,6 +140,71 @@ mutable struct Options{T<:Real} # This acts as the interface module of Fortran, 
     end
 end
 
+# ── Ballooning-width physics floor ──────────────────────────────────────────────────────────────
+"""
+    WIDTH_FLOOR = 0.5
+
+Physics floor on the TGLF ballooning width (TGLF width units) for every TGLF-EP width search: the
+`WIDTH_MIN` / `WIDTH_IN` controls read from `input.TGLFEP` and the narrow-width search floor `w_lo` of the
+extended-width AD solvers (`:ad :locate` / `:wide`, `:robust_ad`, `:truth`, `:multistart`, `:nlopt`).
+
+Basis: the eigenvalue-optimal TGLF-EP width stays at or above 0.5; narrower Gauss–Hermite envelopes do not
+represent the gyrokinetic mode structure, and in the APS-2026 campaign the sub-0.5 located optima were not
+`N_BASIS`-converged and could lock onto non-EP modes.
+Widths below this floor are therefore outside the model's validity and every search is clamped to
+`w ≥ WIDTH_FLOOR` ([`enforce_width_floor!`](@ref), [`floor_w_lo`](@ref), [`width_floor`](@ref)). The
+Fortran TGLF-EP box `[WIDTH_MIN, WIDTH_MAX] = [1, 2]` lies above the floor, so Fortran-faithful (`:grid`)
+runs with the standard inputs are unaffected.
+
+For numerical studies ONLY, the environment variable `TJLFEP_WIDTH_FLOOR` overrides the value.
+"""
+const WIDTH_FLOOR = 0.5
+
+"""
+    width_floor() -> Float64
+
+The effective ballooning-width floor: [`WIDTH_FLOOR`](@ref) unless `ENV["TJLFEP_WIDTH_FLOOR"]` overrides
+it (numerical studies only; results below 0.5 are outside the TGLF-EP model's validity).
+"""
+width_floor() = parse(Float64, get(ENV, "TJLFEP_WIDTH_FLOOR", string(WIDTH_FLOOR)))
+
+"""
+    floor_w_lo(w_lo; what="w_lo") -> Float64
+
+Clamp a narrow-width search floor up to [`width_floor`](@ref), warning once when a caller asked for less.
+"""
+function floor_w_lo(w_lo::Real; what::AbstractString = "w_lo")
+    wf = width_floor()
+    if w_lo < wf
+        @warn "TJLFEP: $(what) = $(w_lo) is below the ballooning-width physics floor WIDTH_FLOOR = $(wf); using $(wf) (override with ENV TJLFEP_WIDTH_FLOOR for numerical studies only)" maxlog = 1
+        return wf
+    end
+    return Float64(w_lo)
+end
+
+"""
+    enforce_width_floor!(o::Options) -> o
+
+Clamp the width controls read from `input.TGLFEP` up to [`width_floor`](@ref) in place, with a warning:
+`WIDTH_IN` when `WIDTH_IN_FLAG` is set (the single fixed width), else `WIDTH_MIN`/`WIDTH_MAX` (the scan
+box). The unused control (e.g. the `WIDTH_IN = 0` placeholder of a scan-box input) is left alone. Called
+by the input readers ([`readTGLFEP`](@ref) and the IMAS extension).
+"""
+function enforce_width_floor!(o::Options)
+    wf = width_floor()
+    fields = (o.WIDTH_IN_FLAG === true) ? (:WIDTH_IN,) : (:WIDTH_MIN, :WIDTH_MAX)
+    for f in fields
+        v = getfield(o, f)
+        (v === missing || (v isa AbstractFloat && isnan(v))) && continue
+        if v < wf
+            @warn "TJLFEP: input $(f) = $(v) is below the ballooning-width physics floor WIDTH_FLOOR = $(wf); clamping to $(wf) (override with ENV TJLFEP_WIDTH_FLOOR for numerical studies only)" maxlog = 1
+            setfield!(o, f, oftype(v, wf))
+        end
+    end
+    return o
+end
+
+
 """
     profile{T<:Real}
 

@@ -816,6 +816,7 @@ function readTGLFEP(filename::String, ir_exp::Vector{Int64}; nmodes::Int = _nmod
     _default_if_missing!(inputTJLFEP, :THETA_SQ_THRESH, 1.0e10)
     _default_if_missing!(inputTJLFEP, :Q_SCALE, 1.0)
 
+    enforce_width_floor!(inputTJLFEP)   # ballooning-width physics floor (WIDTH_FLOOR = 0.5)
     return inputTJLFEP
 end
 
