@@ -26,20 +26,19 @@ and refuses otherwise. The backfill/1N templates accept any `SCAN_N`.
 
 `SOLVER` (and `AD_EXTEND_MODE` for `ad`) is the one physics-relevant run knob. Node-hours are
 for the reactor-relevant `UCP_complete` case at `N_BASIS=32` (Fortran `-n 1280` on 10 CPU
-nodes = 2.47 node-hours; full tables in [`docs/BENCHMARKS.md`](../docs/BENCHMARKS.md)).
+nodes = 2.46 node-hours, measured 2026-10 on v2.0.18 with the `WIDTH_FLOOR = 0.5` default; full tables in [`docs/BENCHMARKS.md`](../docs/BENCHMARKS.md)).
 
 | `SOLVER` | Width box | Template | `INNER` | node-h | What you get |
 |---|---|---|---|---:|---|
-| `grid` | `w >= 1` | gpu_5N | `mps_team` | 0.57 | The Fortran-equivalent `(kyhat x width x factor)` sweep. **Reproduces Fortran `SFmin`.** |
-| `ad` + `AD_EXTEND_MODE=only` | `w >= 1` | gpu_5N | `threads` | 0.31 | De-quantized approximation of `grid`. Fast iteration only; misses the narrower `0.5 <= w < 1` modes. |
-| `ad` + `AD_EXTEND_MODE=locate` **(default)** | extended | gpu_backfill | `mps_team` | 1.49 | Adds the narrower-width (`0.5 <= w < 1`, never below the physics floor `WIDTH_FLOOR = 0.5`) EP-driven Alfven modes Fortran misses; the faithful extended-width value. Production / `ActorTJLFEP` default. |
-| `ad` + `AD_EXTEND_MODE=wide` | extended | gpu_backfill | `mps_team` | 0.46 | One log-seeded narrow-width pass: ~3x cheaper than `locate`, conservative (within 1-2x of it, never below). Bulk NN-database generation. |
+| `grid` | `w >= 1` | gpu_5N | `mps_team` | 0.49 | The Fortran-equivalent `(kyhat x width x factor)` sweep. **Reproduces Fortran `SFmin`.** |
+| `ad` + `AD_EXTEND_MODE=only` | `w >= 1` | gpu_5N | `threads` | 0.28 | De-quantized approximation of `grid`. Fast iteration only; misses the narrower `0.5 <= w < 1` modes. |
+| `ad` + `AD_EXTEND_MODE=locate` **(default)** | extended | gpu_backfill | `mps_team` | 1.16 | Adds the narrower-width (`0.5 <= w < 1`, never below the physics floor `WIDTH_FLOOR = 0.5`) EP-driven Alfven modes Fortran misses; the faithful extended-width value. Production / `ActorTJLFEP` default. |
+| `ad` + `AD_EXTEND_MODE=wide` | extended | gpu_backfill | `mps_team` | 0.39 | One log-seeded narrow-width pass: ~3x cheaper than `locate`, conservative (within 1-2x of it, never below). Bulk NN-database generation. |
 | `robust_ad`, `truth` | extended | gpu_backfill | `mps_team` | higher | Reference tiers above `locate` (`truth` adds an `N_BASIS` ladder; ~34 min per DIII-D profile at nb32). Validation only. |
-| `grid` on CPU | `w >= 1` | cpu_10N / cpu_1N | pmap | 14.6 | Same result as GPU `grid`, ~25x the node-hours. |
+| `grid` on CPU | `w >= 1` | cpu_10N / cpu_1N | pmap | 13.6 | Same result as GPU `grid`, ~28x the node-hours. |
 
-The node-hours of the extended-width rows were measured with the pre-2026-10 search floor `w_lo = 0.05`.
-With the ballooning-width physics floor `WIDTH_FLOOR = 0.5` as the code default the extended solvers search a
-bounded box (cheaper, and 1-4x rather than up to 16x below `grid`); re-measured values follow.
+With the ballooning-width physics floor `WIDTH_FLOOR = 0.5` the extended solvers search a bounded box: they
+land 1-4x below `grid` (not the up-to-16x of the earlier unbounded search) and cost 20-50 % less than before.
 
 Why the split: `grid` and `ad :only` cost about the same at every radius, so spreading 20
 radii over 5 nodes finishes in one wave at no extra node-hours. The extended-width solvers
