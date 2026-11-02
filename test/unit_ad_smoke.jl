@@ -157,6 +157,42 @@ using TJLFEP
         end
     end
 
+    # The (kyhat, width) critical_factor_optimize reports must be the point whose AE-band root is
+    # sfmin: re-solving marginal_factor at the reported point reproduces the reported factor. The
+    # seed solves run concurrently (threads / team chunk map); a closure that bound the enclosing
+    # function's `ky, w` instead of its own locals attributed one seed's root to another seed's
+    # (ky, w) (ITER FUSE case, 2026-11-01), which this invariant catches whenever nthreads() > 1.
+    @testset "critical_factor_optimize: reported (kyhat,width) reproduces sfmin" begin
+        root = normpath(@__DIR__, "..")
+        gac  = joinpath(root, "examples", "DIIID_202017C42_500ms_v3.1", "input.gacode")
+        tgl  = joinpath(@__DIR__, "fixtures", "scan2", "input_scan2_nb2.TGLFEP")
+        opts, prof, _ = preprocess_gacode_inputs(gac, tgl)
+        ep = deepcopy(opts)
+        ep.IR = ep.IR_EXP[1]
+        ep.FACTOR_IN = ep.FACTOR[1]
+        gth = TJLFEP._gamma_thresh_for(ep, prof)
+        shi = Float64(ep.FACTOR_IN); slo = shi / 512.0
+        r = critical_factor_optimize(ep, prof; gamma_thresh=gth, scan_lo=slo, faithful_confirm=false,
+                                     extend_width=false, inner=:threads)
+        if isfinite(r.sfmin)
+            e = deepcopy(ep); e.KYHAT_IN = r.kyhat; e.WIDTH_IN = r.width
+            mf = marginal_factor(e, prof; gamma_thresh=gth, ae_band=true, scan_lo=slo, scan_hi=shi)
+            @test mf.converged
+            @test isapprox(mf.factor, r.sfmin; rtol=1e-3)
+            # with the confirm on, a candidate whose faithful sweep keeps no mode is infeasible (Inf),
+            # never the cheap AE-band root
+            rc = critical_factor_optimize(ep, prof; gamma_thresh=gth, scan_lo=slo, faithful_confirm=true,
+                                          extend_width=false, inner=:threads)
+            if rc.faithful !== nothing && rc.faithful.binding == :none
+                @test !isfinite(rc.sfmin)
+            elseif rc.faithful !== nothing
+                @test rc.sfmin == rc.faithful.factor_faithful
+            end
+        else
+            @test isnan(r.kyhat)
+        end
+    end
+
     # End-to-end coverage of the derivative-free (ky,w) solver branches (_mainsub_multistart /
     # _mainsub_nlopt + _finalize_nls_result!).
     # Seed grid / iteration knobs are shrunk via ENV so the nb=2 single-radius solve stays fast;

@@ -1120,7 +1120,9 @@ remain `w≥1`.
 - `faithful_confirm=true` (the `solver=:ad` scan default): the located narrow
   candidates are faithful-confirmed (`IFLUX=true`) with an early-stop bound, so
   `sfmin` is the faithful keep onset (min over the `w≥1` descent and the
-  extension) and **matches `:robust_ad` bitwise** at the located mode.
+  extension) and **matches `:robust_ad` bitwise** at the located mode. A confirm
+  that finds no kept mode (`binding == :none`) makes that candidate infeasible;
+  the cheap AE-band root is never substituted for a missing keep onset.
 - `faithful_confirm=false` ("pure AD" extended): NO faithful confirm anywhere —
   the solver folds in the lowest cheap AE-band/descended onset over the located
   candidates and reports that. Much cheaper (zero `IFLUX=true` evals), but the
@@ -1191,6 +1193,9 @@ function critical_factor_optimize(inputsEP::Options{Float64}, inputsPR::profile{
 
     # ── one projected-gradient descent (backtracking line search) from a single seed ──
     descend = function (ky0::Float64, w0::Float64, f0::Float64)
+        # `local`: `ky`/`w`/`f` are also assigned in the ENCLOSING function (the adopt step below), so
+        # without the declaration these assignments would write the shared captured variables.
+        local ky, w, f
         ky, w, f = ky0, w0, f0
         iters = 0; converged = false
         for it in (isfinite(f0) ? (1:maxiter) : (1:0))
@@ -1264,19 +1269,26 @@ function critical_factor_optimize(inputsEP::Options{Float64}, inputsPR::profile{
         # `fval` closure mutates a coordinator-local Ref that remote workers can't update,
         # so the seed solver returns (factor, n_evals) and we reduce on the coordinator.
         seedsolve = function (idx)
-            ky, w = seedpts[idx]
-            ep = deepcopy(inputsEP); ep.KYHAT_IN = ky; ep.WIDTH_IN = w
+            # Closure-local names, NOT `ky, w`: those are variables of the enclosing function (assigned
+            # at the adopt step below), so `ky, w = seedpts[idx]` here would bind the shared captured
+            # pair. The seed solves run concurrently under `_ad_pmap` (threads, or the team workers'
+            # threaded chunk map), and with a shared pair a task could solve at ANOTHER seed's (ky,w)
+            # while its result stayed attributed to its own index. Observed on the ITER FUSE case: the
+            # genuine AE-band onset of (kŷ 0.38, w 1.0) was reported at (0.88, 1.67) / (0.63, 1.67),
+            # with a different value on every run; at the reported point no AE-band mode exists at all.
+            kyi, wi = seedpts[idx]
+            ep = deepcopy(inputsEP); ep.KYHAT_IN = kyi; ep.WIDTH_IN = wi
             mf = marginal_factor(ep, inputsPR; gamma_thresh = gth, ae_band = true,
                                  scan_lo = scan_lo, scan_hi = shi, nscan = nscan, use_gpu = use_gpu)
             (mf.converged ? mf.factor : Inf, mf.evals)
         end
         seedres = _ad_pmap(seedsolve, length(seedpts); inner = inner, team = team)
         for (idx, fr) in enumerate(seedres)
-            f, ne = fr
+            fi, ne = fr
             evals[] += ne
-            isfinite(f) && push!(seed_pool, (seedpts[idx][1], seedpts[idx][2], f))
-            if f < best_f
-                best_f = f; best_ky = seedpts[idx][1]; best_w = seedpts[idx][2]
+            isfinite(fi) && push!(seed_pool, (seedpts[idx][1], seedpts[idx][2], fi))
+            if fi < best_f
+                best_f = fi; best_ky = seedpts[idx][1]; best_w = seedpts[idx][2]
             end
         end
     end
@@ -1328,8 +1340,14 @@ function critical_factor_optimize(inputsEP::Options{Float64}, inputsPR::profile{
     end
 
     # Running best (FAITHFUL terms when confirming; AE-band descent onset otherwise).
-    win_f = (faithful !== nothing && faithful.binding != :none && isfinite(faithful.factor_faithful)) ?
-            faithful.factor_faithful : f
+    # When the confirm ran and found NO kept mode (`binding == :none`: the AE band clears γ* somewhere
+    # in [scan_lo, shi] but every mode there fails a secondary keep filter, or the hull is empty), the
+    # descent optimum is NOT a kept onset. It must not fall back to the cheap AE-band root: with
+    # `faithful_confirm` the contract is "sfmin = faithful keep onset", and the fallback reported
+    # filtered (grid-rejected) onsets as the critical factor. The extension branches below already
+    # require a binding mode before adopting a candidate; this makes the canonical w≥1 stage consistent.
+    faithful_hit = faithful !== nothing && faithful.binding != :none && isfinite(faithful.factor_faithful)
+    win_f = faithful_hit ? faithful.factor_faithful : (faithful_confirm ? Inf : f)
     win_ky = ky; win_w = w; win_faithful = faithful
     n_ext_confirm = 0
     # `converged` must reflect whichever stage produced the WINNER, not just the initial canonical
@@ -1337,8 +1355,7 @@ function critical_factor_optimize(inputsEP::Options{Float64}, inputsPR::profile{
     # descent converged = false) and the real onset is supplied entirely by the width extension below;
     # reporting the w≥1 descent's flag then spuriously shows converged = false at every such radius.
     # Seed from the w≥1 descent/confirm and let the extension flip it true when it wins.
-    win_converged = (faithful !== nothing && faithful.binding != :none && isfinite(faithful.factor_faithful)) ?
-                    true : (isfinite(f) ? converged : false)
+    win_converged = faithful_hit ? true : (isfinite(win_f) ? converged : false)
 
     # ── width extension: cheap log-spaced (ky,w) AE-onset rank → :ad descent → (optional) faithful
     # confirm. This is the SAME `_locate_extended` machinery `:robust_ad` uses, but seeded on the
