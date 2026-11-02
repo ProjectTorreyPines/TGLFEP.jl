@@ -6,7 +6,7 @@ module TJLFEPIMASExt
 # file-based path (`runTHD(::String,...)` / `runTHD_from_gacode`), this extension is
 # NOT loaded, so `using TJLFEP` stays light (no IMAS/HDF5/FUSE pulled in).
 #
-# Previously this code lived in src/run_tjlfep_imas.jl behind a `TJLFEP_FILE_ONLY`
+# Previously this code lived in src/run_tjlfep_imas.jl behind a `TGLFEP_JULIA_FILE_ONLY`
 # ENV flag and a precompile-time `_FILE_ONLY` const. That was fragile because ENV is
 # not part of Julia's precompile cache key. The weakdep/extension model makes the
 # split automatic and cache-correct.
@@ -69,7 +69,7 @@ function TJLFEP.preprocess_imas_inputs(dd::IMAS.dd, rho::AbstractVector{Float64}
     prof = TJLFEP.profile{Float64}(extraEP["NR"], extraEP["NS"])
     profile = TJLFEP.populate_tjlfep_profile!(prof, extraEP, extraEP["NR"], extraEP["NS"])
 
-    nmodes = get(OptionsDict, "nmodes", TJLFEP._nmodes_env())  # keep/reject count; env TJLFEP_NMODES default 4
+    nmodes = get(OptionsDict, "nmodes", TJLFEP._nmodes_env())  # keep/reject count; env TGLFEP_JULIA_NMODES default 4
     Options = TJLFEP.Options{Float64}(OptionsDict["SCAN_N"], OptionsDict["WIDTH_IN_FLAG"], OptionsDict["nn"], extraEP["NR"], OptionsDict["jtscale_max"], nmodes)
 
     if OptionsDict["KY_MODEL"] == 0
@@ -179,7 +179,7 @@ end
 
 IMAS/FUSE entry point. Available when IMAS + GACODE + TurbulentTransport are loaded.
 
-`precomputed_dir` (defaults to ENV `TJLFEP_PRECOMPUTED_DIR`): when set, the per-radius
+`precomputed_dir` (defaults to ENV `TGLFEP_JULIA_PRECOMPUTED_DIR`): when set, the per-radius
 kw-scans are NOT computed in-process; instead the `task_<i>.jls` files written by the
 SPMD per-radius tasks (`runTHD_dd_radius`) are loaded. This is the merge phase of the
 MPS-team SPMD layout (each radius ran on its own GPU with its own MPS team); the
@@ -190,7 +190,7 @@ function TJLFEP.runTHD(dd::IMAS.dd, rho::AbstractVector{Float64}, OptionsDict::D
                 ql_flux_scan::Bool=false, inner::Symbol=:threads, mps_team::Int=0, solver::Symbol=:grid,
                 refine_rounds::Int=1, k_max::Int=TJLFEP._k_max_env(), extend_mode::Union{Nothing,Symbol}=nothing,
                 wide_kdesc::Union{Nothing,Int}=nothing, faithful_confirm::Union{Nothing,Bool}=nothing,
-                precomputed_dir::AbstractString=get(ENV, "TJLFEP_PRECOMPUTED_DIR", ""))
+                precomputed_dir::AbstractString=get(ENV, "TGLFEP_JULIA_PRECOMPUTED_DIR", ""))
 
     use_gpu = TJLFEP._resolve_use_gpu(use_gpu)   # :auto -> GPU when CUDA is functional
     Options, profile, extraEP, expro_state = preprocess_imas_inputs(dd, rho, OptionsDict; verbose=printout)

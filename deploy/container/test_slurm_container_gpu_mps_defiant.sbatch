@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH --job-name=tjlfep-container-mps
+#SBATCH --job-name=tglfep_julia-container-mps
 #SBATCH --account=fus176
 #SBATCH --partition=batch-gpu
 #SBATCH --time=0:30:00
@@ -7,14 +7,14 @@
 #SBATCH --gpus=1
 #SBATCH --cpus-per-task=32
 #SBATCH --mem=200G
-#SBATCH --output=tjlfep_container_mps_%j.out
+#SBATCH --output=tglfep_julia_container_mps_%j.out
 #
 # CUDA MPS team run of the TJLFEP container on a Defiant H200 (Apptainer):
 # one radius whose inner kw-scan is distributed over MPS_TEAM in-container
 # worker processes sharing this task's GPU. Same driver as the Perlmutter
 # variant (mps_team_driver.jl); only the host-side wrapper differs.
 #
-#   SIF=$WORK/tjlfep_v2.0.14-gpu.sif sbatch --export=ALL \
+#   SIF=$WORK/tglfep_julia_v2.0.14-gpu.sif sbatch --export=ALL \
 #       deploy/container/test_slurm_container_gpu_mps_defiant.sbatch
 #
 # Optional: MPS_TEAM (default 4), JULIA_WORKER_THREADS (default 2), DRIVER.
@@ -36,7 +36,7 @@
 
 set -euo pipefail
 
-sif="${SIF:?set SIF (path to tjlfep_<v>.sif, e.g. \$WORK/tjlfep_v2.0.14-gpu.sif)}"
+sif="${SIF:?set SIF (path to tglfep_julia_<v>.sif, e.g. \$WORK/tglfep_julia_v2.0.14-gpu.sif)}"
 export MPS_TEAM="${MPS_TEAM:-4}"
 export JULIA_WORKER_THREADS="${JULIA_WORKER_THREADS:-2}"
 export JULIA_NUM_THREADS="$SLURM_CPUS_PER_TASK"
@@ -66,4 +66,4 @@ driver="${DRIVER:-$SLURM_SUBMIT_DIR/deploy/container/mps_team_driver.jl}"
 # (e.g. when the repo lives on a filesystem Apptainer does not auto-bind).
 apptainer exec --nv \
     --bind "$(dirname "$driver")" \
-    "$sif" tjlfep "$driver"
+    "$sif" tglfep_julia "$driver"

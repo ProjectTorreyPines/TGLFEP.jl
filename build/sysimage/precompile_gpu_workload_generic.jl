@@ -1,6 +1,6 @@
 # Precompile workload for the GENERIC GPU sysimage (TJLFEP full / not file-only). Same GPU
 # compute trace as precompile_gpu_workload.jl (one nb6 radius on the GPU -> tjlf_LS eigenvalue
-# + eigenvector CUSOLVER paths), but does NOT set TJLFEP_FILE_ONLY, so it runs in the full
+# + eigenvector CUSOLVER paths), but does NOT set TGLFEP_JULIA_FILE_ONLY, so it runs in the full
 # module context (IMAS/FUSE/TurbulentTransport loaded). The expensive JIT is the GPU per-combo
 # path, which this traces; IMAS/FUSE glue is loaded (baked) but compiles on first actual use.
 

@@ -11,7 +11,7 @@
 #
 #   julia -t 64 --project=. dev/ad/validate_solver_toggle.jl
 
-ENV["TJLFEP_PROBE"] = "1"
+ENV["TGLFEP_JULIA_PROBE"] = "1"
 
 using TJLFEP
 using Printf

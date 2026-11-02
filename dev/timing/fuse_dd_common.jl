@@ -12,10 +12,10 @@
 
 using Pkg
 
-const TJLFEP_ROOT = get(ENV, "TJLFEP_ROOT", normpath(@__DIR__, "..", ".."))
-const FUSE_ROOT = get(ENV, "FUSE_ROOT", normpath(TJLFEP_ROOT, "..", "FUSE"))
+const TGLFEP_JULIA_ROOT = get(ENV, "TGLFEP_JULIA_ROOT", normpath(@__DIR__, "..", ".."))
+const FUSE_ROOT = get(ENV, "FUSE_ROOT", normpath(TGLFEP_JULIA_ROOT, "..", "FUSE"))
 Pkg.activate(FUSE_ROOT)
-push!(LOAD_PATH, TJLFEP_ROOT)
+push!(LOAD_PATH, TGLFEP_JULIA_ROOT)
 
 function logmsg(args...)
     println(args...)
@@ -37,7 +37,7 @@ const WIDE_KDESC = parse(Int, get(ENV, "AD_WIDE_KDESC", "2"))
 const FAITHFUL_CONFIRM = get(ENV, "AD_FAITHFUL_CONFIRM", "1") != "0"
 const INNER = Symbol(get(ENV, "INNER", "mps_team"))
 const MPS_TEAM = parse(Int, get(ENV, "MPS_TEAM", "8"))
-const OUT_DIR = get(() -> error("set TJLFEP_OUT_DIR (SPMD run directory)"), ENV, "TJLFEP_OUT_DIR")
+const OUT_DIR = get(() -> error("set TGLFEP_JULIA_OUT_DIR (SPMD run directory)"), ENV, "TGLFEP_JULIA_OUT_DIR")
 const TASKS_DIR = joinpath(OUT_DIR, "tasks")
 const DD_IN_JSON = joinpath(OUT_DIR, "dd_in.json")
 const OPTIONSDICT_JLS = joinpath(OUT_DIR, "optionsdict.jls")

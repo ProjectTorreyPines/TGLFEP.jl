@@ -19,11 +19,11 @@ set -uo pipefail
 module load julia/1.11.7
 export JULIA_DEPOT_PATH="${PSCRATCH}/.julia${JULIA_DEPOT_PATH:+:${JULIA_DEPOT_PATH}}"
 
-TJLFEP_ROOT="/pscratch/sd/t/tneiser/.julia/dev/TJLFEP"
-cd "${TJLFEP_ROOT}"
+TGLFEP_JULIA_ROOT="/pscratch/sd/t/tneiser/.julia/dev/TJLFEP"
+cd "${TGLFEP_JULIA_ROOT}"
 
 NTHREADS="${NTHREADS:-8}"
-JL=(julia --startup-file=no --project="${TJLFEP_ROOT}" -t "${NTHREADS}")
+JL=(julia --startup-file=no --project="${TGLFEP_JULIA_ROOT}" -t "${NTHREADS}")
 
 echo "=== node=$(hostname) threads=${NTHREADS} job=${SLURM_JOB_ID:-?} ==="
 stdbuf -oL -eL "${JL[@]}" dev/ad/benchmark_critical_factor.jl 2>&1 | tee dev/ad/benchmark_ae_band_out.txt

@@ -1,5 +1,5 @@
 # SCAN_N=20 distributed CPU timing. Set N_BASIS via env (default 6).
-get(ENV, "TJLFEP_FILE_ONLY", "0") == "1" || (ENV["TJLFEP_FILE_ONLY"] = "1")
+get(ENV, "TGLFEP_JULIA_FILE_ONLY", "0") == "1" || (ENV["TGLFEP_JULIA_FILE_ONLY"] = "1")
 
 using Pkg
 Pkg.activate("..")
@@ -10,10 +10,10 @@ function logmsg(args...)
     flush(stderr)
 end
 
-const TJLFEP_ROOT = normpath(@__DIR__, "..", "..")
+const TGLFEP_JULIA_ROOT = normpath(@__DIR__, "..", "..")
 const N_BASIS = parse(Int, get(ENV, "N_BASIS", "6"))
-const CASE_DIR = get(ENV, "CASE_DIR", joinpath(TJLFEP_ROOT, "examples", "DIIID_202017C42_500ms_v3.1"))
-const FILE_DIR = get(ENV, "FILE_DIR", joinpath(TJLFEP_ROOT, "dev", "fileInput_nb$(N_BASIS)_scan20_$(get(ENV, "SLURM_JOB_ID", "local"))"))
+const CASE_DIR = get(ENV, "CASE_DIR", joinpath(TGLFEP_JULIA_ROOT, "examples", "DIIID_202017C42_500ms_v3.1"))
+const FILE_DIR = get(ENV, "FILE_DIR", joinpath(TGLFEP_JULIA_ROOT, "dev", "fileInput_nb$(N_BASIS)_scan20_$(get(ENV, "SLURM_JOB_ID", "local"))"))
 const SCAN_N = parse(Int, get(ENV, "SCAN_N", "20"))
 const THREADS_PER_WORKER = parse(Int, get(ENV, "JULIA_WORKER_THREADS", get(ENV, "SLURM_CPUS_PER_TASK", "64")))
 const TGLFEP_FILE = get(ENV, "TGLFEP_FILE", joinpath(CASE_DIR, "input_scan20_nb$(N_BASIS).TGLFEP"))
@@ -41,8 +41,8 @@ using LinearAlgebra
 
 BLAS.set_num_threads(1)
 
-project_path = TJLFEP_ROOT
-_sysimage = get(ENV, "TJLFEP_SYSIMAGE", joinpath(TJLFEP_ROOT, "dev", "TJLFEP_cpu_sysimage.so"))
+project_path = TGLFEP_JULIA_ROOT
+_sysimage = get(ENV, "TGLFEP_JULIA_SYSIMAGE", joinpath(TGLFEP_JULIA_ROOT, "dev", "TGLFEP_JULIA_cpu_sysimage.so"))
 exeflags = if isfile(_sysimage)
     `--project=$(project_path) --sysimage=$(_sysimage) -t $(THREADS_PER_WORKER)`
 else
@@ -52,7 +52,7 @@ logmsg("worker exeflags sysimage=", isfile(_sysimage) ? _sysimage : "none")
 worker_env = Dict{String,String}()
 haskey(ENV, "JULIA_DEPOT_PATH") && (worker_env["JULIA_DEPOT_PATH"] = ENV["JULIA_DEPOT_PATH"])
 worker_env["JULIA_PKG_PRECOMPILE_AUTO"] = "0"
-worker_env["TJLFEP_FILE_ONLY"] = "1"
+worker_env["TGLFEP_JULIA_FILE_ONLY"] = "1"
 worker_env["GACODE_DUMP"] = GACODE_DUMP
 
 tw = time()
@@ -67,7 +67,7 @@ else
     addprocs(SCAN_N; exeflags=exeflags, env=worker_env)
 end
 @everywhere begin
-    get(ENV, "TJLFEP_FILE_ONLY", "0") == "1" || (ENV["TJLFEP_FILE_ONLY"] = "1")
+    get(ENV, "TGLFEP_JULIA_FILE_ONLY", "0") == "1" || (ENV["TGLFEP_JULIA_FILE_ONLY"] = "1")
     using TJLFEP
     using TJLF
     using LinearAlgebra
@@ -83,7 +83,7 @@ use_gpu = false
 tglfep = abspath(joinpath(FILE_DIR, "input.TGLFEP"))
 mtglf = abspath(joinpath(FILE_DIR, "input.MTGLF"))
 expro = abspath(joinpath(FILE_DIR, "input.EXPRO"))
-outdir = abspath(joinpath(TJLFEP_ROOT, "dev", "timing_out_scan20_nb$(N_BASIS)_cpu_$(get(ENV, "SLURM_JOB_ID", "local"))_dist"))
+outdir = abspath(joinpath(TGLFEP_JULIA_ROOT, "dev", "timing_out_scan20_nb$(N_BASIS)_cpu_$(get(ENV, "SLURM_JOB_ID", "local"))_dist"))
 mkpath(outdir)
 
 logmsg("workers=", nworkers(), " FILE_DIR=", FILE_DIR)

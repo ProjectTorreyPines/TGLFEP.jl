@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH --job-name=tjlfep-container-gpu
+#SBATCH --job-name=tglfep_julia-container-gpu
 #SBATCH --account=m5377_g
 #SBATCH --constraint=gpu
 #SBATCH --qos=debug
@@ -7,7 +7,7 @@
 #SBATCH --nodes=1
 #SBATCH --gpus-per-node=1
 #SBATCH --cpus-per-task=32
-#SBATCH --output=tjlfep_container_gpu_%j.out
+#SBATCH --output=tglfep_julia_container_gpu_%j.out
 #
 # GPU smoke-test of the migrated TJLFEP podman-hpc image on a Perlmutter A100.
 # `podman-hpc run --gpu` injects the host NVIDIA driver; the image carries its
@@ -15,13 +15,13 @@
 # the artifact's forward-compat libcuda never shadows the injected driver).
 # Pull/build + migrate first (see README), then:
 #
-#   TJLFEP_ENVIRONMENT=v2.0.14 sbatch --export=ALL deploy/container/test_slurm_gpu.sbatch
+#   TGLFEP_JULIA_ENVIRONMENT=v2.0.14 sbatch --export=ALL deploy/container/test_slurm_gpu.sbatch
 #
-# TJLFEP_ENVIRONMENT expects the localhost/tjlfep:<tag> name that build.sh and the
+# TGLFEP_JULIA_ENVIRONMENT expects the localhost/tglfep_julia:<tag> name that build.sh and the
 # NERSC installer produce. A plain `podman-hpc pull ghcr.io/...` keeps the ghcr name
-# instead — pass it in full via TJLFEP_IMAGE:
+# instead — pass it in full via TGLFEP_JULIA_IMAGE:
 #
-#   TJLFEP_IMAGE=ghcr.io/projecttorreypines/tjlfep:v2.0.14-gpu sbatch --export=ALL ...
+#   TGLFEP_JULIA_IMAGE=ghcr.io/projecttorreypines/tglfep_julia:v2.0.14-gpu sbatch --export=ALL ...
 #
 # Either way the image must be MIGRATED (podman-hpc migrate <image>) under exactly that
 # name, or compute nodes won't see it and will try to pull from a bogus registry.
@@ -42,7 +42,7 @@
 
 set -euo pipefail
 
-image="${TJLFEP_IMAGE:-localhost/tjlfep:${TJLFEP_ENVIRONMENT:?set TJLFEP_ENVIRONMENT (e.g. v2.0.14 or v2.0.14-gpu) or a full TJLFEP_IMAGE}}"
+image="${TGLFEP_JULIA_IMAGE:-localhost/tglfep_julia:${TGLFEP_JULIA_ENVIRONMENT:?set TGLFEP_JULIA_ENVIRONMENT (e.g. v2.0.14 or v2.0.14-gpu) or a full TGLFEP_JULIA_IMAGE}}"
 
 podman=(podman-hpc)
 [[ -n "${SQUASH_DIR:-}" ]] && podman=(podman-hpc --squash-dir "$SQUASH_DIR")
@@ -52,7 +52,7 @@ nvidia-smi -L
 
 "${podman[@]}" run --rm --gpu --network none \
     -e JULIA_NUM_THREADS="$SLURM_CPUS_PER_TASK" \
-    "$image" tjlfep -e '
+    "$image" tglfep_julia -e '
         println("sysimage: ", unsafe_string(Base.JLOptions().image_file))
         @time import TJLFEP
         import CUDA

@@ -7,7 +7,7 @@
 #   module load julia/1.11.7 && export JULIA_DEPOT_PATH=$PSCRATCH/.julia
 #   julia -t 8 --project=. dev/ad/benchmark_ad_vs_production_diiid.jl
 
-ENV["TJLFEP_PROBE"] = "1"
+ENV["TGLFEP_JULIA_PROBE"] = "1"
 
 using TJLFEP
 using Printf

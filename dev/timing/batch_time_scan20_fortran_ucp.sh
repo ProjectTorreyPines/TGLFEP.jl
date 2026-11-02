@@ -28,10 +28,10 @@ export TGLFEP_DEBUG=0
 
 NB="${NB:-32}"
 NTASKS="${NTASKS:-1280}"
-TJLFEP_ROOT="${TJLFEP_ROOT:-/pscratch/sd/t/tneiser/.julia/dev/TJLFEP}"
-CASE_DIR="${CASE_DIR:-${TJLFEP_ROOT}/examples/UCP_complete}"
+TGLFEP_JULIA_ROOT="${TGLFEP_JULIA_ROOT:-/pscratch/sd/t/tneiser/.julia/dev/TJLFEP}"
+CASE_DIR="${CASE_DIR:-${TGLFEP_JULIA_ROOT}/examples/UCP_complete}"
 TGLFEP_INPUT="${TGLFEP_INPUT:-${CASE_DIR}/input_scan20_nb${NB}.TGLFEP}"
-RUN_DIR="${TJLFEP_ROOT}/dev/timing_runs/ucp_fortran_scan20_nb${NB}_${SLURM_JOB_ID}"
+RUN_DIR="${TGLFEP_JULIA_ROOT}/dev/timing_runs/ucp_fortran_scan20_nb${NB}_${SLURM_JOB_ID}"
 
 set +u
 # shellcheck source=/dev/null

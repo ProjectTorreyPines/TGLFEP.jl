@@ -13,7 +13,7 @@ benchmarks and verification results:
 
 Conventions: submit from `dev/` (`cd dev && sbatch timing/<script>.sh`); the scripts `cd`
 there and their Slurm logs and run output land in `dev/` (all gitignored). They default
-`TJLFEP_ROOT` to the maintainer's checkout and `-A m3739`/`m3739_g`, so expect to override
-`TJLFEP_ROOT`, the account, and `TJLFEP_GPU_SYSIMAGE`/`TJLFEP_SYSIMAGE` (the old local
+`TGLFEP_JULIA_ROOT` to the maintainer's checkout and `-A m3739`/`m3739_g`, so expect to override
+`TGLFEP_JULIA_ROOT`, the account, and `TGLFEP_JULIA_GPU_SYSIMAGE`/`TGLFEP_JULIA_SYSIMAGE` (the old local
 `build/*.so` defaults no longer exist; the scripts fall back to JIT when the file is missing).
 They share the production driver, MPS wrapper, and merge script in `slurm/common/`.

@@ -22,7 +22,7 @@ module load cudatoolkit/12.9
 module load julia/1.11.7
 export JULIA_DEPOT_PATH="${PSCRATCH}/.julia${JULIA_DEPOT_PATH:+:${JULIA_DEPOT_PATH}}"
 
-export TJLFEP_FILE_ONLY=1 USE_GPU=1 TJLFEP_DEBUG=0 TJLFEP_PRINTOUT=1
+export TGLFEP_JULIA_FILE_ONLY=1 USE_GPU=1 TGLFEP_JULIA_DEBUG=0 TGLFEP_JULIA_PRINTOUT=1
 export INNER=threads
 export SOLVER="${SOLVER:-grid}"
 export JULIA_CUDA_USE_COMPAT=false
@@ -31,16 +31,16 @@ NB="${NB:-6}"
 SCAN_INDEX="${SCAN_INDEX:-10}"
 export SCAN_INDEX
 
-TJLFEP_ROOT="${TJLFEP_ROOT:-/pscratch/sd/t/tneiser/.julia/dev/TJLFEP}"
-export CASE_DIR="${CASE_DIR:-${TJLFEP_ROOT}/examples/UCP_complete}"
+TGLFEP_JULIA_ROOT="${TGLFEP_JULIA_ROOT:-/pscratch/sd/t/tneiser/.julia/dev/TJLFEP}"
+export CASE_DIR="${CASE_DIR:-${TGLFEP_JULIA_ROOT}/examples/UCP_complete}"
 export GACODE_FILE="${GACODE_FILE:-${CASE_DIR}/input.gacode}"
 export TGLFEP_FILE="${TGLFEP_FILE:-${CASE_DIR}/input_scan20_nb${NB}.TGLFEP}"
-export OUT_DIR="${TJLFEP_ROOT}/dev/ucp_smoke_nb${NB}_${SLURM_JOB_ID}_tasks"
+export OUT_DIR="${TGLFEP_JULIA_ROOT}/dev/ucp_smoke_nb${NB}_${SLURM_JOB_ID}_tasks"
 
 # Leaner file-only GPU sysimage (matches the file-based runTHD/run_gacode_scan_task path).
-GPU_SYSIMG="${TJLFEP_GPU_SYSIMAGE:-${TJLFEP_ROOT}/dev/TJLFEP_gpu_sysimage.so}"
+GPU_SYSIMG="${TGLFEP_JULIA_GPU_SYSIMAGE:-${TGLFEP_JULIA_ROOT}/dev/TGLFEP_JULIA_gpu_sysimage.so}"
 if [[ -f "${GPU_SYSIMG}" ]]; then
-    export TJLFEP_GPU_SYSIMAGE="${GPU_SYSIMG}"
+    export TGLFEP_JULIA_GPU_SYSIMAGE="${GPU_SYSIMG}"
     SYSIMG_ARGS=(--sysimage="${GPU_SYSIMG}")
     echo "GPU sysimage: ${GPU_SYSIMG}"
 else
@@ -48,11 +48,11 @@ else
     echo "GPU sysimage: none found at '${GPU_SYSIMG}' -> running with JIT"
 fi
 
-cd "${TJLFEP_ROOT}/dev"
+cd "${TGLFEP_JULIA_ROOT}/dev"
 echo "=== UCP smoke: nb=${NB} scan_index=${SCAN_INDEX} solver=${SOLVER} case=${CASE_DIR} ==="
 nvidia-smi -L 2>/dev/null | head -2 || true
 
-stdbuf -oL -eL julia --startup-file=no --project="${TJLFEP_ROOT}" \
-    "${SYSIMG_ARGS[@]}" -t 8 ${TJLFEP_ROOT}/slurm/common/run_gacode_scan20_mps_task.jl
+stdbuf -oL -eL julia --startup-file=no --project="${TGLFEP_JULIA_ROOT}" \
+    "${SYSIMG_ARGS[@]}" -t 8 ${TGLFEP_JULIA_ROOT}/slurm/common/run_gacode_scan20_mps_task.jl
 
 echo "=== UCP smoke finished; outputs in ${OUT_DIR} ==="

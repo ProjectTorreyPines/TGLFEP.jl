@@ -22,9 +22,9 @@ set -uo pipefail
 cd "$(dirname "$0")/.."
 
 NB_LIST="${NB_LIST:-6 8 16 32}"
-TJLFEP_ROOT="${TJLFEP_ROOT:-/pscratch/sd/t/tneiser/.julia/dev/TJLFEP}"
-GPU_SYSIMG="${TJLFEP_ROOT}/dev/TJLFEP_gpu_generic_sysimage.so"
-REC="${TJLFEP_ROOT}/dev/timing_runs/last_timing_vs_nbasis_robust_ad.txt"
+TGLFEP_JULIA_ROOT="${TGLFEP_JULIA_ROOT:-/pscratch/sd/t/tneiser/.julia/dev/TJLFEP}"
+GPU_SYSIMG="${TGLFEP_JULIA_ROOT}/dev/TGLFEP_JULIA_gpu_generic_sysimage.so"
+REC="${TGLFEP_JULIA_ROOT}/dev/timing_runs/last_timing_vs_nbasis_robust_ad.txt"
 mkdir -p "$(dirname "${REC}")"
 : > "${REC}"
 
@@ -54,4 +54,4 @@ done
 
 echo "=== recorded job ids -> ${REC} ==="
 cat "${REC}"
-echo "=== after runs complete (from dev/): julia --project=${TJLFEP_ROOT} timing/collect_scan20_timing.jl && ./timing/plot_scan20_timing.sh ==="
+echo "=== after runs complete (from dev/): julia --project=${TGLFEP_JULIA_ROOT} timing/collect_scan20_timing.jl && ./timing/plot_scan20_timing.sh ==="

@@ -83,7 +83,7 @@ Post-processing uses `DENS_$ep_slot` (last species), consistent with the EP slot
 
 - Paths: `EP_TJLF` → `TJLFEP` in `DIIID_juliaValidation.jl` and `batchRun.sh`.
 - TJLF branch: use `origin/gpu_new` at `/pscratch/sd/t/tneiser/.julia/dev/TJLF`.
-- Sysimage: `TJLFEP/build/TJLFEP_cpu_sysimage.so` (optional).
+- Sysimage: `TJLFEP/build/TGLFEP_JULIA_cpu_sysimage.so` (optional).
 - Comparison script: `examples/DIIID_202017C42_500ms_v3.1/compare_fortran_julia.jl`.
 
 ## 10. Debug workflow (N_BASIS=6)
@@ -93,7 +93,7 @@ Post-processing uses `DENS_$ep_slot` (last species), consistent with the EP slot
 | `TGLFEP_nb6` | Fortran TGLF-EP | `dev/verify/batch_debug_nb6_fortran.sh` |
 | `TJLFEP_nb6` | Julia TJLFEP | `dev/verify/batch_debug_nb6_julia.sh` |
 
-Set `TGLFEP_DEBUG=1` (Fortran) and `TJLFEP_DEBUG=1` (Julia) for matched debug lines tagged `[TGLFEP_DBG]` and `[TJLFEP_DBG]`. No sysimage is recommended while TJLFEP/TJLF are under active development.
+Set `TGLFEP_DEBUG=1` (Fortran) and `TGLFEP_JULIA_DEBUG=1` (Julia) for matched debug lines tagged `[TGLFEP_DBG]` and `[TGLFEP_JULIA_DBG]`. No sysimage is recommended while TJLFEP/TJLF are under active development.
 
 ## 11. Single-radius basis scans (SCAN_N=1, ir=2)
 
@@ -147,7 +147,7 @@ GPUs). That is why the 5N/10N/20N walls are ~tied — a GPU-worker **sysimage**
 (removing the JIT) is the next lever and should push the scan toward ~2–3 min and
 re-expose the more-GPUs/radius advantage.
 
-Scripts: `slurm/common/mps-scan-wrapper.sh` + `slurm/tjlfep_gpu_5N.sbatch` (the
+Scripts: `slurm/common/mps-scan-wrapper.sh` + `slurm/tglfep_julia_gpu_5N.sbatch` (the
 validated production layout; the 20N/10N layouts are archived under `attic/build/`,
 generalized by `GPUS_PER_RADIUS`). The GPU eigenvector inverse-iteration solve
 lives in TJLF (`_gpu_lu_solve!`, CUSOLVER getrf/getrs), gated by

@@ -2,7 +2,7 @@
 # kwscale_scan (Fortran-equivalent (kyhat x width x factor) grid, IFLUX=true).
 #
 # On ITER IR=83 we:
-#   1. run kwscale_scan (TJLFEP_PROBE=1, timed) → production sfmin (f_guess_mark),
+#   1. run kwscale_scan (TGLFEP_JULIA_PROBE=1, timed) → production sfmin (f_guess_mark),
 #      its marked (kymark, width), the number of full IFLUX=true TJLFEP_ky evals,
 #      and wall time.
 #   2. run marginal_factor_faithful at that SAME marked (ky,w) → the AD-localized
@@ -12,7 +12,7 @@
 #   module load julia/1.11.7 && export JULIA_DEPOT_PATH=$PSCRATCH/.julia
 #   julia -t 8 --project=. dev/ad/benchmark_ad_vs_production.jl
 
-ENV["TJLFEP_PROBE"] = "1"
+ENV["TGLFEP_JULIA_PROBE"] = "1"
 
 using TJLFEP
 using Printf

@@ -14,7 +14,7 @@
 #SBATCH -t 02:00:00
 #SBATCH -C gpu
 #SBATCH -G 1
-#SBATCH -J tjlfep_slots_gate
+#SBATCH -J tglfep_julia_slots_gate
 #SBATCH -o dev/ad/gpu_slots_validate_%j.out
 #SBATCH -e dev/ad/gpu_slots_validate_%j.err
 #SBATCH --ntasks-per-node=1
@@ -28,8 +28,8 @@ module load julia/1.11.7
 export JULIA_DEPOT_PATH="${PSCRATCH}/.julia${JULIA_DEPOT_PATH:+:${JULIA_DEPOT_PATH}}"
 export JULIA_CUDA_USE_COMPAT=false
 
-TJLFEP_ROOT="${TJLFEP_ROOT:-/pscratch/sd/t/tneiser/.julia/dev/TJLFEP}"
-cd "${TJLFEP_ROOT}"
+TGLFEP_JULIA_ROOT="${TGLFEP_JULIA_ROOT:-/pscratch/sd/t/tneiser/.julia/dev/TJLFEP}"
+cd "${TGLFEP_JULIA_ROOT}"
 
 export USE_GPU=1
 export GKSwstype=nul
@@ -38,7 +38,7 @@ export SOLVERS=grid
 export RADII="${RADII:-}"
 SLOTS="${SLOTS:-4}"
 GOLDEN="dev/ad/golden_grid_nb${NB}.csv"
-JL=(julia --startup-file=no --project="${TJLFEP_ROOT}" -t 16)
+JL=(julia --startup-file=no --project="${TGLFEP_JULIA_ROOT}" -t 16)
 
 echo "=== GPU slots exactness+speed gate (nb=${NB}, slots 1 vs ${SLOTS}) ==="
 echo "host: $(hostname)  date: $(date)  job=${SLURM_JOB_ID:-?}"

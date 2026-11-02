@@ -20,9 +20,9 @@ set -uo pipefail
 
 module load cudatoolkit/12.9
 module load julia/1.11.7
-export JULIA_DEPOT_PATH="${JULIA_DEPOT_PATH:-$HOME/.julia}:${PSCRATCH}/.julia:${TJLFEP_DEPOT:-/global/cfs/cdirs/m3739/TJLFEP/depot}"
+export JULIA_DEPOT_PATH="${JULIA_DEPOT_PATH:-$HOME/.julia}:${PSCRATCH}/.julia:${TGLFEP_JULIA_DEPOT:-/global/cfs/cdirs/m3739/TJLFEP/depot}"
 
-export TJLFEP_FILE_ONLY=1 USE_GPU=1 TJLFEP_DEBUG=0 TJLFEP_PRINTOUT=0
+export TGLFEP_JULIA_FILE_ONLY=1 USE_GPU=1 TGLFEP_JULIA_DEBUG=0 TGLFEP_JULIA_PRINTOUT=0
 export INNER=threads
 export SOLVER=ad
 export AD_EXTEND_MODE=only
@@ -30,23 +30,23 @@ export GPUS_PER_RADIUS=1
 export MPS_TEAM="${MPS_TEAM:-8}"
 export JULIA_WORKER_THREADS="${JULIA_WORKER_THREADS:-2}"
 export JULIA_CUDA_USE_COMPAT=false
-export TJLFEP_PROBE="${TJLFEP_PROBE:-0}"
+export TGLFEP_JULIA_PROBE="${TGLFEP_JULIA_PROBE:-0}"
 
 NB="${NB:-32}"
 
-TJLFEP_ROOT="${TJLFEP_ROOT:-/pscratch/sd/t/tneiser/.julia/dev/TJLFEP}"
-export CASE_DIR="${CASE_DIR:-${TJLFEP_ROOT}/examples/UCP_complete}"
+TGLFEP_JULIA_ROOT="${TGLFEP_JULIA_ROOT:-/pscratch/sd/t/tneiser/.julia/dev/TJLFEP}"
+export CASE_DIR="${CASE_DIR:-${TGLFEP_JULIA_ROOT}/examples/UCP_complete}"
 export GACODE_FILE="${GACODE_FILE:-${CASE_DIR}/input.gacode}"
 export TGLFEP_FILE="${TGLFEP_FILE:-${CASE_DIR}/input_scan20_nb${NB}.TGLFEP}"
-export OUT_DIR="${TJLFEP_ROOT}/dev/ucp_nb${NB}_scan20_jgpu_ad_only_${SLURM_JOB_ID}_tasks"
+export OUT_DIR="${TGLFEP_JULIA_ROOT}/dev/ucp_nb${NB}_scan20_jgpu_ad_only_${SLURM_JOB_ID}_tasks"
 
 export CUDA_MPS_PIPE_DIRECTORY="/tmp/nvidia-mps.$SLURM_JOB_ID"
 export CUDA_MPS_LOG_DIRECTORY="/tmp/nvidia-log.$SLURM_JOB_ID"
 
-GPU_SYSIMG="${TJLFEP_GPU_SYSIMAGE:-${TJLFEP_ROOT}/dev/TJLFEP_gpu_sysimage.so}"
+GPU_SYSIMG="${TGLFEP_JULIA_GPU_SYSIMAGE:-${TGLFEP_JULIA_ROOT}/dev/TGLFEP_JULIA_gpu_sysimage.so}"
 STAGE="${STAGE:-1}"
 if [[ "${STAGE}" == "1" && -n "${GPU_SYSIMG}" && -f "${GPU_SYSIMG}" ]]; then
-    STAGED_SO="/tmp/tjlfep_gpusys_${SLURM_JOB_ID}.so"
+    STAGED_SO="/tmp/tglfep_julia_gpusys_${SLURM_JOB_ID}.so"
     echo "STAGE=1: sbcast ${GPU_SYSIMG} -> ${STAGED_SO} (all nodes)"
     t_bcast=$(date +%s)
     if sbcast -f "${GPU_SYSIMG}" "${STAGED_SO}"; then
@@ -57,7 +57,7 @@ if [[ "${STAGE}" == "1" && -n "${GPU_SYSIMG}" && -f "${GPU_SYSIMG}" ]]; then
     fi
 fi
 if [[ -n "${GPU_SYSIMG}" && -f "${GPU_SYSIMG}" ]]; then
-    export TJLFEP_GPU_SYSIMAGE="${GPU_SYSIMG}"
+    export TGLFEP_JULIA_GPU_SYSIMAGE="${GPU_SYSIMG}"
     MASTER_SYSIMG_ARGS=(--sysimage="${GPU_SYSIMG}")
     echo "GPU sysimage (master+workers): ${GPU_SYSIMG}"
 else
@@ -65,7 +65,7 @@ else
     echo "GPU sysimage: none found -> running with JIT"
 fi
 
-cd "${TJLFEP_ROOT}/dev"
+cd "${TGLFEP_JULIA_ROOT}/dev"
 JOB_T0=$(date +%s.%N)
 echo "TIMING_START backend=julia device=gpu solver=ad-only mode=only nodes=${SLURM_NNODES:-5} tasks=${SLURM_NTASKS:-20} SCAN_N=20 N_BASIS=${NB} case=ucp"
 echo "OUT_DIR=${OUT_DIR}"
@@ -73,10 +73,10 @@ nvidia-smi -L 2>/dev/null | head -4 || true
 
 T0=$(date +%s.%N)
 srun --export=ALL --label -n "${SLURM_NTASKS:-20}" --ntasks-per-node=4 --cpu-bind=cores \
-    ${TJLFEP_ROOT}/slurm/common/mps-scan-wrapper.sh \
-    stdbuf -oL -eL julia --startup-file=no --project="${TJLFEP_ROOT}" \
+    ${TGLFEP_JULIA_ROOT}/slurm/common/mps-scan-wrapper.sh \
+    stdbuf -oL -eL julia --startup-file=no --project="${TGLFEP_JULIA_ROOT}" \
     "${MASTER_SYSIMG_ARGS[@]}" \
-    -t "${JULIA_WORKER_THREADS}" ${TJLFEP_ROOT}/slurm/common/run_gacode_scan20_mps_task.jl
+    -t "${JULIA_WORKER_THREADS}" ${TGLFEP_JULIA_ROOT}/slurm/common/run_gacode_scan20_mps_task.jl
 T1=$(date +%s.%N)
 SCAN_S=$(python3 -c "print(f'{float(\"${T1}\") - float(\"${T0}\"): .3f}')")
 echo "TIMING_RESULT backend=julia device=gpu solver=ad-only phase=scan seconds=${SCAN_S} SCAN_N=20 N_BASIS=${NB} nodes=${SLURM_NNODES:-5} tasks=${SLURM_NTASKS:-20} case=ucp"
@@ -86,8 +86,8 @@ srun --export=ALL -n "${SLURM_NNODES:-5}" --ntasks-per-node=1 \
 
 export USE_GPU=0
 T0=$(date +%s.%N)
-stdbuf -oL -eL julia --startup-file=no --project="${TJLFEP_ROOT}" \
-    "${MASTER_SYSIMG_ARGS[@]}" -t 8 ${TJLFEP_ROOT}/slurm/common/merge_gacode_scan20_array.jl
+stdbuf -oL -eL julia --startup-file=no --project="${TGLFEP_JULIA_ROOT}" \
+    "${MASTER_SYSIMG_ARGS[@]}" -t 8 ${TGLFEP_JULIA_ROOT}/slurm/common/merge_gacode_scan20_array.jl
 T1=$(date +%s.%N)
 MERGE_S=$(python3 -c "print(f'{float(\"${T1}\") - float(\"${T0}\"): .3f}')")
 echo "TIMING_RESULT backend=julia device=gpu solver=ad-only phase=merge seconds=${MERGE_S} SCAN_N=20 N_BASIS=${NB} case=ucp"

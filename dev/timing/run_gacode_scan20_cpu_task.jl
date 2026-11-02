@@ -9,7 +9,7 @@
 #   SOLVER       :grid (default) | :ad | :robust_ad  -- must match the GPU run for a fair compare
 #   TGLFEP_FILE / GACODE_FILE / CASE_DIR / OUT_DIR   as in the GPU task
 
-ENV["TJLFEP_FILE_ONLY"] = "1"
+ENV["TGLFEP_JULIA_FILE_ONLY"] = "1"
 
 using Pkg
 Pkg.activate(normpath(@__DIR__, "..", ".."))
@@ -39,7 +39,7 @@ const OUT_DIR = get(ENV, "OUT_DIR", joinpath(ROOT, "dev", "gacode_scan20_cpu_$(g
 opts, _, _ = preprocess_gacode_inputs(GACODE_PATH, TGLFEP)
 scan_n = opts.SCAN_N
 
-printout = get(ENV, "TJLFEP_PRINTOUT", "0") == "1"
+printout = get(ENV, "TGLFEP_JULIA_PRINTOUT", "0") == "1"
 
 println("=== gacode scan CPU task (inner=threads solver=$SOLVER refine_rounds=$REFINE_ROUNDS) ===")
 println("threads/task=$(Threads.nthreads())  scan_n=$scan_n  host=$(gethostname())")

@@ -15,7 +15,7 @@ module load cudatoolkit/12.9
 module load julia/1.11.7
 
 # Shared m3739 tree: full depot, published sysimages, and the published build envs.
-CFS_DIR="${TJLFEP_CFS_DIR:-/global/cfs/cdirs/m3739/TJLFEP}"
+CFS_DIR="${TGLFEP_JULIA_CFS_DIR:-/global/cfs/cdirs/m3739/TJLFEP}"
 
 # Your writable depot MUST come first; the CFS depot provides read-only packages/artifacts.
 export JULIA_DEPOT_PATH="${SCRATCH}/.julia:${CFS_DIR}/depot"
@@ -27,7 +27,7 @@ export JULIA_CUDA_USE_COMPAT=false
 # sysimage was baked from.
 SMOKE_PROJECT="${SMOKE_PROJECT:-${CFS_DIR}/env_full}"
 # Optional GPU sysimage (build once with batch_build_gpu_sysimage_generic.sh). Missing -> JIT.
-SYSIMAGE="${TJLFEP_GPU_SYSIMAGE:-${CFS_DIR}/TJLFEP_gpu_generic_sysimage.so}"
+SYSIMAGE="${TGLFEP_JULIA_GPU_SYSIMAGE:-${CFS_DIR}/TGLFEP_JULIA_gpu_generic_sysimage.so}"
 
 # Submitted from the repo's dev/ dir (cd dev && sbatch verify/batch_smoke_test.sh);
 # works from any user's checkout.

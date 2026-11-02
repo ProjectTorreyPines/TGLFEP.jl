@@ -12,11 +12,11 @@ using LinearAlgebra
 BLAS.set_num_threads(1)
 use_gpu = TJLF.pick_device(:auto) === :gpu
 
-const TJLFEP_ROOT = normpath(@__DIR__, "..", "..")
+const TGLFEP_JULIA_ROOT = normpath(@__DIR__, "..", "..")
 const CASE_DIR = get(ENV, "CASE_DIR",
-    joinpath(TJLFEP_ROOT, "examples", "DIIID_202017C42_500ms_v3.1"))
+    joinpath(TGLFEP_JULIA_ROOT, "examples", "DIIID_202017C42_500ms_v3.1"))
 const FILE_DIR = get(ENV, "FILE_DIR",
-    joinpath(TJLFEP_ROOT, "dev", "fileInput_$(get(ENV, "SLURM_JOB_ID", "local"))"))
+    joinpath(TGLFEP_JULIA_ROOT, "dev", "fileInput_$(get(ENV, "SLURM_JOB_ID", "local"))"))
 
 @assert isfile(joinpath(CASE_DIR, "dump.profile")) "missing dump.profile in $CASE_DIR"
 @assert isfile(joinpath(CASE_DIR, "input.TGLFEP")) "missing input.TGLFEP in $CASE_DIR"
@@ -34,7 +34,7 @@ tglfep = joinpath(FILE_DIR, "input.TGLFEP")
 mtglf = joinpath(FILE_DIR, "input.MTGLF")
 expro = joinpath(FILE_DIR, "input.EXPRO")
 
-outdir = joinpath(TJLFEP_ROOT, "dev", "validate_out_$(get(ENV, "SLURM_JOB_ID", "local"))_files")
+outdir = joinpath(TGLFEP_JULIA_ROOT, "dev", "validate_out_$(get(ENV, "SLURM_JOB_ID", "local"))_files")
 mkpath(outdir)
 
 t0 = time()

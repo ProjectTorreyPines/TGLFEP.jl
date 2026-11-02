@@ -172,9 +172,9 @@ using TJLFEP
         ENV["NLS_NSEED_KY"] = "3"; ENV["NLS_NSEED_W"] = "4"
         ENV["NLS_KDESCEND"] = "1"; ENV["NLS_LOCAL_EVALS"] = "4"
         ENV["NLOPT_MAXEVAL"] = "16"
-        # Honor the GPU eigensolve path when the batch job requests it (TJLFEP_TEST_USE_GPU=1);
+        # Honor the GPU eigensolve path when the batch job requests it (TGLFEP_JULIA_TEST_USE_GPU=1);
         # defaults to the CPU path so the CI depot-cache run stays host-only.
-        test_gpu = get(ENV, "TJLFEP_TEST_USE_GPU", "0") == "1"
+        test_gpu = get(ENV, "TGLFEP_JULIA_TEST_USE_GPU", "0") == "1"
         try
             for solver in (:nlopt, :multistart)
                 out = mktempdir()

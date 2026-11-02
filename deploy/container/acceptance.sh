@@ -1,15 +1,15 @@
 #!/bin/bash
 # Acceptance checks for the TJLFEP container.
 #
-#   TJLFEP_ENVIRONMENT=v2.0.14 ./deploy/container/acceptance.sh
-#   TJLFEP_ENVIRONMENT=v2.0.14-imas ./deploy/container/acceptance.sh   # imas variant
-#   TJLFEP_ENVIRONMENT=v2.0.14-gpu ./deploy/container/acceptance.sh    # sysimage tag
+#   TGLFEP_JULIA_ENVIRONMENT=v2.0.14 ./deploy/container/acceptance.sh
+#   TGLFEP_JULIA_ENVIRONMENT=v2.0.14-imas ./deploy/container/acceptance.sh   # imas variant
+#   TGLFEP_JULIA_ENVIRONMENT=v2.0.14-gpu ./deploy/container/acceptance.sh    # sysimage tag
 #
 # CPU-only checks — runs on a login node (GPU acceptance is a separate sbatch,
 # see test_slurm_gpu.sbatch). Runs against the migrated podman-hpc image, or
 # any docker/podman host via ENGINE:
 #
-#   ENGINE=docker TJLFEP_ENVIRONMENT=v2.0.14 ./acceptance.sh
+#   ENGINE=docker TGLFEP_JULIA_ENVIRONMENT=v2.0.14 ./acceptance.sh
 #
 # Optional:
 #   SQUASH_DIR=...   shared podman-hpc squash store
@@ -22,8 +22,8 @@
 
 set -uo pipefail
 
-version="${TJLFEP_ENVIRONMENT:-}"
-[[ -n "$version" ]] || { echo "ERROR: set TJLFEP_ENVIRONMENT (e.g. v2.0.14, v2.0.14-imas, v2.0.14-gpu)" >&2; exit 1; }
+version="${TGLFEP_JULIA_ENVIRONMENT:-}"
+[[ -n "$version" ]] || { echo "ERROR: set TGLFEP_JULIA_ENVIRONMENT (e.g. v2.0.14, v2.0.14-imas, v2.0.14-gpu)" >&2; exit 1; }
 
 # variant/sysimage expectations follow from the tag suffix
 expect_imas=0; expect_sysimage=0
@@ -33,8 +33,8 @@ expect_imas=0; expect_sysimage=0
 engine="${ENGINE:-podman-hpc}"
 command -v "$engine" >/dev/null || { echo "ERROR: $engine not found" >&2; exit 1; }
 
-image="localhost/tjlfep:$version"
-out="${SCRATCH:-/tmp}/tjlfep_acceptance_${version}"
+image="localhost/tglfep_julia:$version"
+out="${SCRATCH:-/tmp}/tglfep_julia_acceptance_${version}"
 mkdir -p "$out"
 
 podman=("$engine")
@@ -55,25 +55,25 @@ echo
 # --- identity ---------------------------------------------------------------
 base_version="${version%%-*}"
 check "version-is-$base_version" bash -c "
-    got=\$(${podman[*]} run --rm $image tjlfep -e 'import TJLFEP; print(pkgversion(TJLFEP))')
+    got=\$(${podman[*]} run --rm $image tglfep_julia -e 'import TJLFEP; print(pkgversion(TJLFEP))')
     echo \"  TJLFEP \$got\"; [ \"v\$got\" = \"$base_version\" ]"
 
 if [[ "$expect_sysimage" == 1 ]]; then
     check "sysimage-loaded" bash -c "
-        p=\$(${podman[*]} run --rm $image tjlfep -e 'print(unsafe_string(Base.JLOptions().image_file))')
-        echo \"  sysimage: \$p\"; [ \"\$p\" = /opt/tjlfep/sys_tjlfep_gpu.so ]"
+        p=\$(${podman[*]} run --rm $image tglfep_julia -e 'print(unsafe_string(Base.JLOptions().image_file))')
+        echo \"  sysimage: \$p\"; [ \"\$p\" = /opt/tglfep_julia/sys_tglfep_julia_gpu.so ]"
 else
     check "no-stray-sysimage" bash -c "
-        p=\$(${podman[*]} run --rm $image tjlfep -e 'print(unsafe_string(Base.JLOptions().image_file))')
-        echo \"  sysimage: \$p\"; [ \"\${p##*/}\" != sys_tjlfep_gpu.so ]"
+        p=\$(${podman[*]} run --rm $image tglfep_julia -e 'print(unsafe_string(Base.JLOptions().image_file))')
+        echo \"  sysimage: \$p\"; [ \"\${p##*/}\" != sys_tglfep_julia_gpu.so ]"
 fi
 
-# The `tjlfep` wrapper prepends $HOME/.julia_tjlfep_container when the baked
+# The `tglfep_julia` wrapper prepends $HOME/.julia_tjlfep_container when the baked
 # depot is not writable (read-only squash rootfs / SIF). Either way, the
 # effective first depot entry must be writable or runtime precompilation of
 # new packages fails.
 check "writable-depot" bash -c "
-    ${podman[*]} run --rm $image tjlfep -e '
+    ${podman[*]} run --rm $image tglfep_julia -e '
         d = first(DEPOT_PATH)
         println(\"  first depot: \", d)
         mkpath(d)
@@ -82,7 +82,7 @@ check "writable-depot" bash -c "
         println(\"  depot is writable\")'"
 
 check "core-package-versions" bash -c "
-    ${podman[*]} run --rm $image tjlfep -e '
+    ${podman[*]} run --rm $image tglfep_julia -e '
         import Pkg
         found = Dict(d.name => d.version for d in values(Pkg.dependencies()))
         for p in [\"TJLFEP\",\"TJLF\",\"CUDA\",\"PackageCompiler\"]
@@ -93,7 +93,7 @@ check "core-package-versions" bash -c "
 # The 12.9 runtime artifact must be baked (offline GPU nodes cannot download),
 # and on a host without --gpu / --nv the stack must degrade to CPU, not throw.
 check "cuda-runtime-baked-12.9" bash -c "
-    ${podman[*]} run --rm --network none $image tjlfep -e '
+    ${podman[*]} run --rm --network none $image tglfep_julia -e '
         crj = Base.require(Base.PkgId(Base.UUID(\"76a88914-d11a-5bdc-97e0-2f5a05c973a2\"), \"CUDA_Runtime_jll\"))
         crj.is_available() || (println(\"  CUDA_Runtime_jll unavailable\"); exit(1))
         d = crj.artifact_dir
@@ -105,7 +105,7 @@ check "cuda-runtime-baked-12.9" bash -c "
         (v.major == 12 && v.minor == 9) || exit(1)'"
 
 check "cpu-fallback-graceful" bash -c "
-    ${podman[*]} run --rm --network none $image tjlfep -e '
+    ${podman[*]} run --rm --network none $image tglfep_julia -e '
         import CUDA, TJLFEP
         f = CUDA.functional()
         println(\"  CUDA.functional() = \", f, \" (no GPU injected — expect false)\")
@@ -113,23 +113,23 @@ check "cpu-fallback-graceful" bash -c "
 
 # --- image hygiene ----------------------------------------------------------
 check "registries-world-readable" bash -c "
-    bad=\$(${podman[*]} run --rm $image bash -c 'find /opt/tjlfep/.julia/registries ! -perm -o+r | wc -l')
+    bad=\$(${podman[*]} run --rm $image bash -c 'find /opt/tglfep_julia/.julia/registries ! -perm -o+r | wc -l')
     echo \"  non-world-readable entries: \$bad\"; [ \"\$bad\" = 0 ]"
 
 # --- variant ----------------------------------------------------------------
 if [[ "$expect_imas" == 1 ]]; then
     check "imas-extension-loads" bash -c "
-        ${podman[*]} run --rm $image tjlfep -e '
+        ${podman[*]} run --rm $image tglfep_julia -e '
             import TJLFEP, IMAS, GACODE, TurbulentTransport
             ext = Base.get_extension(TJLFEP, :TJLFEPIMASExt)
             println(\"  TJLFEPIMASExt: \", ext)
             ext === nothing && exit(1)'"
 
-    # Scan in Julia, not nested bash: through podman -> bash -c -> tjlfep -e the
+    # Scan in Julia, not nested bash: through podman -> bash -c -> tglfep_julia -e the
     # quoting is three deep, and a quoting slip reads as "the image still has
     # LFS stubs".
     check "no-LFS-pointer-stubs" bash -c "
-        ${podman[*]} run --rm $image tjlfep -e '
+        ${podman[*]} run --rm $image tglfep_julia -e '
             import TurbulentTransport
             root = joinpath(pkgdir(TurbulentTransport), \"models\")
             isdir(root) || (println(\"  no models dir at \", root); exit(1))
@@ -144,7 +144,7 @@ if [[ "$expect_imas" == 1 ]]; then
             exit(isempty(stubs) ? 0 : 1)'"
 else
     check "lean-has-no-imas" bash -c "
-        ${podman[*]} run --rm $image tjlfep -e '
+        ${podman[*]} run --rm $image tglfep_julia -e '
             import TJLFEP
             ext = Base.get_extension(TJLFEP, :TJLFEPIMASExt)
             println(\"  TJLFEPIMASExt: \", ext, \" (lean — expect nothing)\")
@@ -156,7 +156,7 @@ fi
 # offline (--network none proves the image is self-contained).
 if [[ "${SKIP_SLOW:-0}" != "1" ]]; then
     check "singleradius-cpu-solve-offline" bash -c "
-        ${podman[*]} run --rm --network none --volume $out:/out $image tjlfep -e '
+        ${podman[*]} run --rm --network none --volume $out:/out $image tglfep_julia -e '
             import TJLFEP
             ex = joinpath(pkgdir(TJLFEP), \"examples\", \"DIIID_202017C42_500ms_v3.1\")
             TJLFEP.run_gacode_scan_task(
@@ -169,7 +169,7 @@ fi
 
 if [[ "${FULL_TESTS:-0}" == "1" ]]; then
     check "package-test-suite" bash -c "
-        ${podman[*]} run --rm $image tjlfep -e 'import Pkg; Pkg.test(\"TJLFEP\")'"
+        ${podman[*]} run --rm $image tglfep_julia -e 'import Pkg; Pkg.test(\"TJLFEP\")'"
 fi
 
 echo

@@ -23,10 +23,10 @@ cd "$(dirname "$0")/.."   # dev/
 
 NB_LIST="${NB_LIST:-6 8 16 32}"
 SERIES="${SERIES:-fortran gpu_grid gpu_ad_only gpu_ad_locate gpu_ad_wide cpu_grid}"
-TJLFEP_ROOT="${TJLFEP_ROOT:-/pscratch/sd/t/tneiser/.julia/dev/TJLFEP}"
-GEN_IMG="${TJLFEP_ROOT}/dev/TJLFEP_gpu_generic_sysimage.so"
-FILE_IMG="${TJLFEP_ROOT}/dev/TJLFEP_gpu_sysimage.so"
-REC="${TJLFEP_ROOT}/dev/timing_runs/last_ucp_scan20.txt"
+TGLFEP_JULIA_ROOT="${TGLFEP_JULIA_ROOT:-/pscratch/sd/t/tneiser/.julia/dev/TJLFEP}"
+GEN_IMG="${TGLFEP_JULIA_ROOT}/dev/TGLFEP_JULIA_gpu_generic_sysimage.so"
+FILE_IMG="${TGLFEP_JULIA_ROOT}/dev/TGLFEP_JULIA_gpu_sysimage.so"
+REC="${TGLFEP_JULIA_ROOT}/dev/timing_runs/last_ucp_scan20.txt"
 mkdir -p "$(dirname "${REC}")"
 : > "${REC}"
 
@@ -48,13 +48,13 @@ submit() { # label qos batch_script extra_export...
 for nb in ${NB_LIST}; do
     IMG="$(gpu_img "${nb}")"
     has fortran       && submit fortran        premium batch_time_scan20_fortran_ucp.sh
-    has gpu_grid      && submit julia_gpu       premium batch_time_scan20_julia_gpu_ucp.sh          "TJLFEP_GPU_SYSIMAGE=${IMG}"
-    has gpu_ad_only   && submit julia_gpu_ad_only  regular batch_time_scan20_julia_gpu_ad_only_ucp.sh "TJLFEP_GPU_SYSIMAGE=${IMG}"
-    has gpu_ad_locate && submit julia_gpu_ad_locate regular batch_nndb_scan20_1node_ucp.sh "TJLFEP_GPU_SYSIMAGE=${IMG}" "SOLVER=ad" "AD_EXTEND_MODE=locate"
-    has gpu_ad_wide   && submit julia_gpu_ad_wide   regular batch_nndb_scan20_1node_ucp.sh "TJLFEP_GPU_SYSIMAGE=${IMG}" "SOLVER=ad" "AD_EXTEND_MODE=wide"
+    has gpu_grid      && submit julia_gpu       premium batch_time_scan20_julia_gpu_ucp.sh          "TGLFEP_JULIA_GPU_SYSIMAGE=${IMG}"
+    has gpu_ad_only   && submit julia_gpu_ad_only  regular batch_time_scan20_julia_gpu_ad_only_ucp.sh "TGLFEP_JULIA_GPU_SYSIMAGE=${IMG}"
+    has gpu_ad_locate && submit julia_gpu_ad_locate regular batch_nndb_scan20_1node_ucp.sh "TGLFEP_JULIA_GPU_SYSIMAGE=${IMG}" "SOLVER=ad" "AD_EXTEND_MODE=locate"
+    has gpu_ad_wide   && submit julia_gpu_ad_wide   regular batch_nndb_scan20_1node_ucp.sh "TGLFEP_JULIA_GPU_SYSIMAGE=${IMG}" "SOLVER=ad" "AD_EXTEND_MODE=wide"
     has cpu_grid      && submit julia_cpu       regular batch_time_scan20_julia_cpu_ucp.sh
 done
 
 echo "=== recorded job ids -> ${REC} ==="
 cat "${REC}"
-echo "=== after runs: julia --project=${TJLFEP_ROOT} timing/collect_ucp_timing.jl && julia --project=${TJLFEP_ROOT} timing/plot_ucp_timing.jl && julia --project=${TJLFEP_ROOT} ad/plot_ucp_accuracy_nb32.jl ==="
+echo "=== after runs: julia --project=${TGLFEP_JULIA_ROOT} timing/collect_ucp_timing.jl && julia --project=${TGLFEP_JULIA_ROOT} timing/plot_ucp_timing.jl && julia --project=${TGLFEP_JULIA_ROOT} ad/plot_ucp_accuracy_nb32.jl ==="

@@ -40,16 +40,16 @@ sysimage on/off), submit from the repo root:
 
 ```bash
 cd TJLFEP
-$EDITOR slurm/tjlfep_gpu_backfill.sbatch     # "#SBATCH -A <your allocation>", TGLFEP_FILE, SOLVER ...
-sbatch slurm/tjlfep_gpu_backfill.sbatch
+$EDITOR slurm/tglfep_julia_gpu_backfill.sbatch     # "#SBATCH -A <your allocation>", TGLFEP_FILE, SOLVER ...
+sbatch slurm/tglfep_julia_gpu_backfill.sbatch
 ```
 
 | Template | Layout | Recommended for |
 |---|---|---|
-| `slurm/tjlfep_gpu_5N.sbatch` | 5 GPU nodes, 20 radii in one wave | high throughput: `grid`, `ad :only` |
-| `slurm/tjlfep_gpu_backfill.sbatch` | 1 GPU node, 4 GPUs drain a radius queue | low footprint, and the extended-width solvers `ad :locate`/`:wide`, `robust_ad`, `truth` |
-| `slurm/tjlfep_cpu_10N.sbatch` | 10 CPU nodes, one worker per radius | no GPU allocation |
-| `slurm/tjlfep_cpu_1N.sbatch` | 1 CPU node, 2 workers | smallest footprint (slow) |
+| `slurm/tglfep_julia_gpu_5N.sbatch` | 5 GPU nodes, 20 radii in one wave | high throughput: `grid`, `ad :only` |
+| `slurm/tglfep_julia_gpu_backfill.sbatch` | 1 GPU node, 4 GPUs drain a radius queue | low footprint, and the extended-width solvers `ad :locate`/`:wide`, `robust_ad`, `truth` |
+| `slurm/tglfep_julia_cpu_10N.sbatch` | 10 CPU nodes, one worker per radius | no GPU allocation |
+| `slurm/tglfep_julia_cpu_1N.sbatch` | 1 CPU node, 2 workers | smallest footprint (slow) |
 
 Every solver option is a labelled line in the template; the physics (`SCAN_N`, `N_BASIS`,
 `WIDTH_MIN/MAX`, `FACTOR_IN`, ...) stays in the `input.TGLFEP` file, exactly as for the

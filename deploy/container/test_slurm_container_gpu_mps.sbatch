@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH --job-name=tjlfep-container-mps
+#SBATCH --job-name=tglfep_julia-container-mps
 #SBATCH --account=m5377_g
 #SBATCH --constraint=gpu
 #SBATCH --qos=debug
@@ -7,7 +7,7 @@
 #SBATCH --nodes=1
 #SBATCH --gpus-per-node=1
 #SBATCH --cpus-per-task=32
-#SBATCH --output=tjlfep_container_mps_%j.out
+#SBATCH --output=tglfep_julia_container_mps_%j.out
 #
 # CUDA MPS team run of the TJLFEP container on a Perlmutter A100: one radius
 # whose inner kw-scan is distributed over MPS_TEAM in-container worker
@@ -16,7 +16,7 @@
 # slurm/common/run_gacode_scan20_mps_task.jl, self-contained on the packaged
 # DIII-D example — no repo checkout needed on the compute node.
 #
-#   TJLFEP_ENVIRONMENT=v2.0.14-gpu sbatch --export=ALL deploy/container/test_slurm_container_gpu_mps.sbatch
+#   TGLFEP_JULIA_ENVIRONMENT=v2.0.14-gpu sbatch --export=ALL deploy/container/test_slurm_container_gpu_mps.sbatch
 #
 # Optional: MPS_TEAM (default 4), JULIA_WORKER_THREADS (default 2), SQUASH_DIR.
 #
@@ -36,7 +36,7 @@
 
 set -euo pipefail
 
-version="${TJLFEP_ENVIRONMENT:?set TJLFEP_ENVIRONMENT (e.g. v2.0.14 or v2.0.14-gpu)}"
+version="${TGLFEP_JULIA_ENVIRONMENT:?set TGLFEP_JULIA_ENVIRONMENT (e.g. v2.0.14 or v2.0.14-gpu)}"
 export MPS_TEAM="${MPS_TEAM:-4}"
 export JULIA_WORKER_THREADS="${JULIA_WORKER_THREADS:-2}"
 
@@ -59,7 +59,7 @@ done
 trap 'echo quit | nvidia-cuda-mps-control 2>/dev/null || true' EXIT
 echo "MPS daemon up: $CUDA_MPS_PIPE_DIRECTORY"
 
-# --- team driver (shared with the Defiant variant), run by the tjlfep launcher
+# --- team driver (shared with the Defiant variant), run by the tglfep_julia launcher
 driver="${DRIVER:-$SLURM_SUBMIT_DIR/deploy/container/mps_team_driver.jl}"
 [[ -f "$driver" ]] || { echo "ERROR: driver not at $driver — submit from the repo root or set DRIVER=" >&2; exit 1; }
 
@@ -70,4 +70,4 @@ driver="${DRIVER:-$SLURM_SUBMIT_DIR/deploy/container/mps_team_driver.jl}"
     -e CUDA_MPS_PIPE_DIRECTORY -e CUDA_MPS_LOG_DIRECTORY \
     -e MPS_TEAM -e JULIA_WORKER_THREADS \
     -e JULIA_NUM_THREADS="$SLURM_CPUS_PER_TASK" \
-    "localhost/tjlfep:$version" tjlfep "/driver/$(basename "$driver")"
+    "localhost/tglfep_julia:$version" tglfep_julia "/driver/$(basename "$driver")"

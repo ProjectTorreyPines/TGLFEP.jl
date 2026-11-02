@@ -7,7 +7,7 @@
 #SBATCH -t 02:30:00
 #SBATCH -C gpu
 #SBATCH -G 1
-#SBATCH -J tjlfep_bsi_sfmin32
+#SBATCH -J tglfep_julia_bsi_sfmin32
 #SBATCH -o dev/ad/bsi_sfmin_nb32_%j.out
 #SBATCH -e dev/ad/bsi_sfmin_nb32_%j.err
 #SBATCH --ntasks-per-node=1
@@ -19,9 +19,9 @@ module load cudatoolkit/12.9
 module load julia/1.11.7
 export JULIA_DEPOT_PATH="${PSCRATCH}/.julia${JULIA_DEPOT_PATH:+:${JULIA_DEPOT_PATH}}"
 export JULIA_CUDA_USE_COMPAT=false
-ROOT="${TJLFEP_ROOT:-/pscratch/sd/t/tneiser/.julia/dev/TJLFEP}"
+ROOT="${TGLFEP_JULIA_ROOT:-/pscratch/sd/t/tneiser/.julia/dev/TJLFEP}"
 cd "${ROOT}"
-SO="${ROOT}/build/TJLFEP_gpu_sysimage.so"
+SO="${ROOT}/build/TGLFEP_JULIA_gpu_sysimage.so"
 SYSARG=(); [[ -f "${SO}" ]] && SYSARG=(--sysimage="${SO}")
 
 echo "=== batched_si sfmin nb32  $(date) ==="

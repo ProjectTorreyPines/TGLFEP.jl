@@ -14,7 +14,7 @@
     @test ep.WIDTH_MIN == 1.0                        # inputs at/above the floor are untouched
     @test TJLFEP.floor_w_lo(0.05) == 0.5             # the pre-floor solver default is clamped
     @test TJLFEP.floor_w_lo(0.8) == 0.8
-    withenv("TJLFEP_WIDTH_FLOOR" => "0.1") do        # numerical-studies override
+    withenv("TGLFEP_JULIA_WIDTH_FLOOR" => "0.1") do        # numerical-studies override
         @test width_floor() == 0.1
         @test TJLFEP.floor_w_lo(0.2) == 0.2
         ep.WIDTH_MIN = 0.3; enforce_width_floor!(ep); @test ep.WIDTH_MIN == 0.3

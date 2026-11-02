@@ -8,13 +8,13 @@
 
 using Test
 
-# When a GPU run is requested (TJLFEP_TEST_USE_GPU=1, e.g. the premium-GPU batch job), CUDA must be
+# When a GPU run is requested (TGLFEP_JULIA_TEST_USE_GPU=1, e.g. the premium-GPU batch job), CUDA must be
 # imported HERE so TJLF's GPU-solve package extension activates for the whole session; otherwise the
 # use_gpu=true solves throw "CUDA extension not loaded" (the extension is a weakdep, dormant until
 # CUDA is loaded). No-op on the host-only CI path.
-if get(ENV, "TJLFEP_TEST_USE_GPU", "0") == "1"
+if get(ENV, "TGLFEP_JULIA_TEST_USE_GPU", "0") == "1"
     using CUDA
-    CUDA.functional() || error("TJLFEP_TEST_USE_GPU=1 but CUDA.functional() is false on this host")
+    CUDA.functional() || error("TGLFEP_JULIA_TEST_USE_GPU=1 but CUDA.functional() is false on this host")
     CUDA.device!(first(CUDA.devices()))
 end
 

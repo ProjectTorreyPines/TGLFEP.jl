@@ -1,8 +1,8 @@
 # Layer a GPU-traced sysimage onto a published TJLFEP image. Build context is
-# the bake output dir (holds sys_tjlfep_gpu.so); the tjlfep launcher picks the
+# the bake output dir (holds sys_tglfep_julia_gpu.so); the tglfep_julia launcher picks the
 # sysimage up automatically at this path.
-#   podman-hpc build -t localhost/tjlfep:<v>-gpu -f Containerfile.gpu \
-#       --build-arg BASE=ghcr.io/projecttorreypines/tjlfep:<v> $PSCRATCH/tjlfep_sysimage_out
+#   podman-hpc build -t localhost/tglfep_julia:<v>-gpu -f Containerfile.gpu \
+#       --build-arg BASE=ghcr.io/projecttorreypines/tglfep_julia:<v> $PSCRATCH/tglfep_julia_sysimage_out
 ARG BASE
 FROM ${BASE}
-COPY sys_tjlfep_gpu.so /opt/tjlfep/sys_tjlfep_gpu.so
+COPY sys_tglfep_julia_gpu.so /opt/tglfep_julia/sys_tglfep_julia_gpu.so

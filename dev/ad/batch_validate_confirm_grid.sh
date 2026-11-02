@@ -6,7 +6,7 @@
 #SBATCH -N 1
 #SBATCH -t 01:30:00
 #SBATCH -C cpu
-#SBATCH -J tjlfep_confirm_ab
+#SBATCH -J tglfep_julia_confirm_ab
 #SBATCH -o confirm_grid_ab_%j.out
 #SBATCH -e confirm_grid_ab_%j.err
 #SBATCH --ntasks-per-node=1
@@ -17,8 +17,8 @@ set -uo pipefail
 module load julia/1.11.7
 export JULIA_DEPOT_PATH="${PSCRATCH}/.julia"
 
-TJLFEP_ROOT="${TJLFEP_ROOT:-/pscratch/sd/t/tneiser/.julia/dev/TJLFEP}"
-cd "${TJLFEP_ROOT}/dev"
+TGLFEP_JULIA_ROOT="${TGLFEP_JULIA_ROOT:-/pscratch/sd/t/tneiser/.julia/dev/TJLFEP}"
+cd "${TGLFEP_JULIA_ROOT}/dev"
 
 export RADII="${RADII:-22,95}"
 export NB_LIST="${NB_LIST:-8,16}"
@@ -28,7 +28,7 @@ export NB_LIST="${NB_LIST:-8,16}"
 echo "=== confirm_grid A/B exactness (JIT, no sysimage) ==="
 echo "host: $(hostname)  date: $(date)  RADII=${RADII} NB_LIST=${NB_LIST}"
 
-stdbuf -oL -eL julia --startup-file=no --project="${TJLFEP_ROOT}" \
+stdbuf -oL -eL julia --startup-file=no --project="${TGLFEP_JULIA_ROOT}" \
     -t 32 ad/validate_confirm_grid.jl
 
 echo "=== confirm_grid A/B done ==="

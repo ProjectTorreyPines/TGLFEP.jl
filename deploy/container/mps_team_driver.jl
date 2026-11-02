@@ -9,7 +9,7 @@
 # the GPU up front so every CUDA context is an MPS client before the scan.
 # The MPS daemon must already be up on the HOST (the sbatch scripts do that).
 
-ENV["TJLFEP_FILE_ONLY"] = "1"
+ENV["TGLFEP_JULIA_FILE_ONLY"] = "1"
 using Distributed
 pipe = ENV["CUDA_MPS_PIPE_DIRECTORY"]
 @assert ispath(joinpath(pipe, "control")) "MPS control pipe not visible in-container at $pipe"
@@ -17,19 +17,19 @@ pipe = ENV["CUDA_MPS_PIPE_DIRECTORY"]
 nteam   = parse(Int, get(ENV, "MPS_TEAM", "4"))
 tworker = parse(Int, get(ENV, "JULIA_WORKER_THREADS", "2"))
 sysimg  = unsafe_string(Base.JLOptions().image_file)
-exeflags = endswith(sysimg, "sys_tjlfep_gpu.so") ?
+exeflags = endswith(sysimg, "sys_tglfep_julia_gpu.so") ?
     `--startup-file=no -t $tworker --sysimage=$sysimg` :
     `--startup-file=no -t $tworker`
 
 env = Dict{String,String}(k => ENV[k] for k in
     ("CUDA_MPS_PIPE_DIRECTORY", "CUDA_MPS_LOG_DIRECTORY", "JULIA_CUDA_USE_COMPAT",
-     "JULIA_DEPOT_PATH", "JULIA_PROJECT", "TJLFEP_FILE_ONLY", "CUDA_VISIBLE_DEVICES")
+     "JULIA_DEPOT_PATH", "JULIA_PROJECT", "TGLFEP_JULIA_FILE_ONLY", "CUDA_VISIBLE_DEVICES")
     if haskey(ENV, k))
 env["JULIA_PKG_PRECOMPILE_AUTO"] = "0"
 addprocs(nteam; exeflags, env)
 
 @everywhere begin
-    ENV["TJLFEP_FILE_ONLY"] = "1"
+    ENV["TGLFEP_JULIA_FILE_ONLY"] = "1"
     using CUDA, TJLFEP, TJLF, LinearAlgebra
     BLAS.set_num_threads(1)
     CUDA.functional() || error("worker $(myid()): CUDA not functional — MPS client init failed")

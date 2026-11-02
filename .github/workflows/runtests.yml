@@ -10,7 +10,7 @@ on:
 # Note: TJLFEP hard-depends on the full FUSE stack (FUSE/IMAS/TurbulentTransport/CUDA),
 # so the first cold run instantiates a large dependency graph (slow). julia-actions/cache
 # persists the depot across runs to amortize this. The regression itself runs ONE scan
-# radius on CPU (TJLFEP_FILE_ONLY=1) and takes several minutes.
+# radius on CPU (TGLFEP_JULIA_FILE_ONLY=1) and takes several minutes.
 jobs:
   test:
     name: Julia ${{ matrix.version }} - ${{ matrix.os }}
@@ -23,7 +23,7 @@ jobs:
         os:
           - ubuntu-latest
     env:
-      TJLFEP_FILE_ONLY: "1"
+      TGLFEP_JULIA_FILE_ONLY: "1"
       JULIA_NUM_THREADS: "4"
 
     steps:

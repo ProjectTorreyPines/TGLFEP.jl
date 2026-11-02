@@ -25,7 +25,7 @@ module load cudatoolkit/12.9
 module load julia/1.11.7
 export JULIA_DEPOT_PATH="${PSCRATCH}/.julia${JULIA_DEPOT_PATH:+:${JULIA_DEPOT_PATH}}"
 
-export TJLFEP_ROOT="${TJLFEP_ROOT:-/pscratch/sd/t/tneiser/.julia/dev/TJLFEP}"
+export TGLFEP_JULIA_ROOT="${TGLFEP_JULIA_ROOT:-/pscratch/sd/t/tneiser/.julia/dev/TJLFEP}"
 export FUSE_ROOT="${FUSE_ROOT:-/pscratch/sd/t/tneiser/.julia/dev/FUSE}"
 
 export SCAN_N="${SCAN_N:-20}"
@@ -37,11 +37,11 @@ export JULIA_CUDA_USE_COMPAT=false
 
 # Workers JIT TJLFEP from the dev source (NOT the baked sysimage): the master serializes the
 # runTHD pmap closure to the workers, and a stale-source sysimage has mismatched closure types
-# (UndefVarError #NNN#NNN in TJLFEP). Leave TJLFEP_GPU_SYSIMAGE empty unless the sysimage is
+# (UndefVarError #NNN#NNN in TJLFEP). Leave TGLFEP_JULIA_GPU_SYSIMAGE empty unless the sysimage is
 # rebuilt from the current TJLFEP source. Costs ~110 s of one-time GPU-eigensolve JIT per worker.
-export TJLFEP_GPU_SYSIMAGE="${TJLFEP_GPU_SYSIMAGE:-}"
+export TGLFEP_JULIA_GPU_SYSIMAGE="${TGLFEP_JULIA_GPU_SYSIMAGE:-}"
 
-cd "${TJLFEP_ROOT}/dev"
+cd "${TGLFEP_JULIA_ROOT}/dev"
 echo "=== iter_fuse_scan20_gpu_debug  job=${SLURM_JOB_ID}  nodes=${SLURM_NNODES} tasks=${SLURM_NTASKS} ==="
 echo "N_BASIS=${N_BASIS} SCAN_N=${SCAN_N} NGRID=${NGRID} ALPHA_SOLVER=${ALPHA_SOLVER}"
 nvidia-smi -L 2>/dev/null | head -4 || true

@@ -8,7 +8,7 @@
 #SBATCH -N 1
 #SBATCH -t 01:30:00
 #SBATCH -C cpu
-#SBATCH -J tjlfep_csi_cpu
+#SBATCH -J tglfep_julia_csi_cpu
 #SBATCH -o dev/ad/csi_cpu_%j.out
 #SBATCH -e dev/ad/csi_cpu_%j.err
 #SBATCH --ntasks-per-node=1
@@ -18,7 +18,7 @@ set -uo pipefail
 module load julia/1.11.7
 export JULIA_DEPOT_PATH="${PSCRATCH}/.julia${JULIA_DEPOT_PATH:+:${JULIA_DEPOT_PATH}}"
 
-ROOT="${TJLFEP_ROOT:-/pscratch/sd/t/tneiser/.julia/dev/TJLFEP}"
+ROOT="${TGLFEP_JULIA_ROOT:-/pscratch/sd/t/tneiser/.julia/dev/TJLFEP}"
 cd "${ROOT}"
 
 echo "=== 1) TJLF unit tests  $(date) ==="

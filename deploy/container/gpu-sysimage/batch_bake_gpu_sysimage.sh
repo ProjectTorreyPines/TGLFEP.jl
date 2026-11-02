@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH --job-name=tjlfep-gpu-sysimage-bake
+#SBATCH --job-name=tglfep_julia-gpu-sysimage-bake
 #SBATCH --account=m5377_g
 #SBATCH --qos=premium
 #SBATCH --constraint=gpu
@@ -7,7 +7,7 @@
 #SBATCH --nodes=1
 #SBATCH --gpus-per-node=1
 #SBATCH --cpus-per-task=32
-#SBATCH --output=tjlfep_gpu_sysimage_bake_%j.out
+#SBATCH --output=tglfep_julia_gpu_sysimage_bake_%j.out
 #
 # Bake the GPU-traced sysimage inside the TJLFEP container on a Perlmutter
 # A100. The trace executes real GPU solves (all 5 solver paths), so this
@@ -15,16 +15,16 @@
 # system (bake_and_publish.sh does that first). Submit from this directory
 # (or let bake_and_publish.sh do it):
 #
-#   TJLFEP_ENVIRONMENT=v2.0.14 sbatch --export=ALL batch_bake_gpu_sysimage.sh
+#   TGLFEP_JULIA_ENVIRONMENT=v2.0.14 sbatch --export=ALL batch_bake_gpu_sysimage.sh
 #
-# Output: $SYSIMAGE_OUT/sys_tjlfep_gpu.so (default $PSCRATCH/tjlfep_sysimage_out),
+# Output: $SYSIMAGE_OUT/sys_tglfep_julia_gpu.so (default $PSCRATCH/tglfep_julia_sysimage_out),
 # which is the build context for Containerfile.gpu.
 
 set -euo pipefail
 
-version="${TJLFEP_ENVIRONMENT:?set TJLFEP_ENVIRONMENT (e.g. v2.0.14)}"
-image="localhost/tjlfep:$version"
-out="${SYSIMAGE_OUT:-$PSCRATCH/tjlfep_sysimage_out}"
+version="${TGLFEP_JULIA_ENVIRONMENT:?set TGLFEP_JULIA_ENVIRONMENT (e.g. v2.0.14)}"
+image="localhost/tglfep_julia:$version"
+out="${SYSIMAGE_OUT:-$PSCRATCH/tglfep_julia_sysimage_out}"
 # Under sbatch this script runs from slurmd's spool dir, so BASH_SOURCE cannot
 # locate gpu-sysimage/. bake_and_publish.sh exports GPU_SYSIMAGE_DIR; a direct
 # sbatch from this directory falls back to SLURM_SUBMIT_DIR.
@@ -44,16 +44,16 @@ nvidia-smi -L
 podman=(podman-hpc)
 [[ -n "${SQUASH_DIR:-}" ]] && podman=(podman-hpc --squash-dir "$SQUASH_DIR")
 
-# Plain julia, NOT the tjlfep launcher: the launcher unsets JULIA_CPU_TARGET
+# Plain julia, NOT the tglfep_julia launcher: the launcher unsets JULIA_CPU_TARGET
 # (correct for JIT use), but the bake needs the image's multi-target value.
 # The writable overlay absorbs PackageCompiler's temp objects; only /out
 # (bind mount) persists.
 "${podman[@]}" run --rm --gpu \
     -v "$out":/out \
     -v "$scriptdir":/bake:ro \
-    -e SYSIMAGE_PATH=/out/sys_tjlfep_gpu.so \
+    -e SYSIMAGE_PATH=/out/sys_tglfep_julia_gpu.so \
     -e JULIA_NUM_THREADS="${SLURM_CPUS_PER_TASK:-32}" \
-    "$image" julia --project=/opt/tjlfep /bake/build_sysimage_container.jl
+    "$image" julia --project=/opt/tglfep_julia /bake/build_sysimage_container.jl
 
-ls -lh "$out/sys_tjlfep_gpu.so"
+ls -lh "$out/sys_tglfep_julia_gpu.so"
 echo "=== BAKE OK — layer it with Containerfile.gpu (see bake_and_publish.sh)"

@@ -11,7 +11,7 @@
 #SBATCH -t 01:00:00
 #SBATCH -C gpu
 #SBATCH -G 1
-#SBATCH -J tjlfep_si_hybrid
+#SBATCH -J tglfep_julia_si_hybrid
 #SBATCH -o dev/ad/si_hybrid_e2e_%j.out
 #SBATCH -e dev/ad/si_hybrid_e2e_%j.err
 #SBATCH --ntasks-per-node=1
@@ -23,7 +23,7 @@ module load cudatoolkit/12.9
 module load julia/1.11.7
 export JULIA_DEPOT_PATH="${PSCRATCH}/.julia${JULIA_DEPOT_PATH:+:${JULIA_DEPOT_PATH}}"
 
-ROOT="${TJLFEP_ROOT:-/pscratch/sd/t/tneiser/.julia/dev/TJLFEP}"
+ROOT="${TGLFEP_JULIA_ROOT:-/pscratch/sd/t/tneiser/.julia/dev/TJLFEP}"
 cd "${ROOT}"
 JL=(julia --startup-file=no --project="${ROOT}" -t 32)
 

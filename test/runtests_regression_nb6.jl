@@ -43,8 +43,8 @@ end
     @test length(golden) == 20
 
     # scan_index is 1-based; default radius is robust (mid-range SFmin, far from a
-    # bisection boundary). Override with TJLFEP_TEST_SCAN_INDEX for ad-hoc checks.
-    scan_index = parse(Int, get(ENV, "TJLFEP_TEST_SCAN_INDEX", "2"))
+    # bisection boundary). Override with TGLFEP_JULIA_TEST_SCAN_INDEX for ad-hoc checks.
+    scan_index = parse(Int, get(ENV, "TGLFEP_JULIA_TEST_SCAN_INDEX", "2"))
 
     out_dir = mktempdir()
     r = run_gacode_scan_task(_GACODE, _TGLFEP, scan_index; out_dir=out_dir, use_gpu=false, printout=false)

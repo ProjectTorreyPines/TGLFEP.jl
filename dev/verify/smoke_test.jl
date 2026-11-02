@@ -48,8 +48,8 @@ inputGACODE = GACODE.load(INPUT)
 dd = IMAS.dd(inputGACODE)
 
 # Outputs go to the user's scratch, never the package dir (which may be a read-only depot).
-outbase = get(ENV, "TJLFEP_SMOKE_OUT", get(ENV, "SCRATCH", tempdir()))
-outdir = joinpath(outbase, "tjlfep_smoke_out_$(get(ENV, "SLURM_JOB_ID", "local"))")
+outbase = get(ENV, "TGLFEP_JULIA_SMOKE_OUT", get(ENV, "SCRATCH", tempdir()))
+outdir = joinpath(outbase, "tglfep_julia_smoke_out_$(get(ENV, "SLURM_JOB_ID", "local"))")
 mkpath(outdir)
 
 t0 = time()

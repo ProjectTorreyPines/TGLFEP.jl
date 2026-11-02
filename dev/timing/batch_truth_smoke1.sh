@@ -1,6 +1,6 @@
 #!/bin/bash -l
 # 1-GPU plumbing smoke for SOLVER=truth: validates run_gacode_scan_task -> mainsub -> _mainsub_truth
-# -> critical_factor_truth end-to-end under TJLFEP_FILE_ONLY + mps_team on a real GPU, before the
+# -> critical_factor_truth end-to-end under TGLFEP_JULIA_FILE_ONLY + mps_team on a real GPU, before the
 # 20-GPU production profile. One radius (SCAN_INDEX), nb6 input (truth still sweeps nb=32/40/48).
 #   cd dev && SCAN_INDEX=10 sbatch timing/batch_truth_smoke1.sh
 #SBATCH -A m3739_g
@@ -22,7 +22,7 @@ module load cudatoolkit/12.9
 module load julia/1.11.7
 export JULIA_DEPOT_PATH="${PSCRATCH}/.julia${JULIA_DEPOT_PATH:+:${JULIA_DEPOT_PATH}}"
 
-export TJLFEP_FILE_ONLY=1 USE_GPU=1 TJLFEP_DEBUG=0 TJLFEP_PRINTOUT=1
+export TGLFEP_JULIA_FILE_ONLY=1 USE_GPU=1 TGLFEP_JULIA_DEBUG=0 TGLFEP_JULIA_PRINTOUT=1
 export INNER="${INNER:-mps_team}"
 export MPS_TEAM="${MPS_TEAM:-4}"
 export SOLVER=truth
@@ -32,24 +32,24 @@ export JULIA_CUDA_USE_COMPAT=false
 export SCAN_INDEX="${SCAN_INDEX:-10}"
 
 NB="${NB:-6}"
-TJLFEP_ROOT="${TJLFEP_ROOT:-/pscratch/sd/t/tneiser/.julia/dev/TJLFEP}"
-export CASE_DIR="${CASE_DIR:-${TJLFEP_ROOT}/examples/DIIID_202017C42_500ms_v3.1}"
+TGLFEP_JULIA_ROOT="${TGLFEP_JULIA_ROOT:-/pscratch/sd/t/tneiser/.julia/dev/TJLFEP}"
+export CASE_DIR="${CASE_DIR:-${TGLFEP_JULIA_ROOT}/examples/DIIID_202017C42_500ms_v3.1}"
 export GACODE_FILE="${GACODE_FILE:-${CASE_DIR}/input.gacode}"
 export TGLFEP_FILE="${TGLFEP_FILE:-${CASE_DIR}/input_scan20_nb32.TGLFEP}"
-export OUT_DIR="${TJLFEP_ROOT}/dev/truth_smoke1_${SLURM_JOB_ID}_tasks"
+export OUT_DIR="${TGLFEP_JULIA_ROOT}/dev/truth_smoke1_${SLURM_JOB_ID}_tasks"
 
 export CUDA_MPS_PIPE_DIRECTORY="/tmp/nvidia-mps.$SLURM_JOB_ID"
 export CUDA_MPS_LOG_DIRECTORY="/tmp/nvidia-log.$SLURM_JOB_ID"
-export TJLFEP_GPU_SYSIMAGE="/nonexistent/force-jit"
+export TGLFEP_JULIA_GPU_SYSIMAGE="/nonexistent/force-jit"
 
-cd "${TJLFEP_ROOT}/dev"
+cd "${TGLFEP_JULIA_ROOT}/dev"
 echo "=== truth plumbing smoke: SCAN_INDEX=${SCAN_INDEX} SOLVER=truth INNER=${INNER} ==="
 nvidia-smi -L 2>/dev/null | head -1 || true
 
 srun --export=ALL --label -n 1 --ntasks-per-node=1 --cpu-bind=cores \
-    ${TJLFEP_ROOT}/slurm/common/mps-scan-wrapper.sh \
-    stdbuf -oL -eL julia --startup-file=no --project="${TJLFEP_ROOT}" \
-    -t "${JULIA_WORKER_THREADS}" ${TJLFEP_ROOT}/slurm/common/run_gacode_scan20_mps_task.jl
+    ${TGLFEP_JULIA_ROOT}/slurm/common/mps-scan-wrapper.sh \
+    stdbuf -oL -eL julia --startup-file=no --project="${TGLFEP_JULIA_ROOT}" \
+    -t "${JULIA_WORKER_THREADS}" ${TGLFEP_JULIA_ROOT}/slurm/common/run_gacode_scan20_mps_task.jl
 
 srun --export=ALL -n 1 --ntasks-per-node=1 \
     bash -c 'echo quit | nvidia-cuda-mps-control 2>/dev/null || true' || true

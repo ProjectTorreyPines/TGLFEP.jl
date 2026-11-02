@@ -29,7 +29,7 @@ module load cudatoolkit/12.9
 module load julia/1.11.7
 export JULIA_DEPOT_PATH="${PSCRATCH}/.julia"
 export JULIA_CUDA_USE_COMPAT=false
-export TJLFEP_FILE_ONLY=1
+export TGLFEP_JULIA_FILE_ONLY=1
 export USE_GPU=1
 
 ROOT=/pscratch/sd/t/tneiser/.julia/dev/TJLFEP

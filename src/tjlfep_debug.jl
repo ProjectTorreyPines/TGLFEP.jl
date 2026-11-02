@@ -1,11 +1,11 @@
-# Gated debug logging for Julia parity checks (env TJLFEP_DEBUG=1).
+# Gated debug logging for Julia parity checks (env TGLFEP_JULIA_DEBUG=1).
 
-const TJLFEP_DEBUG = get(ENV, "TJLFEP_DEBUG", "0") == "1"
+const TGLFEP_JULIA_DEBUG = get(ENV, "TGLFEP_JULIA_DEBUG", "0") == "1"
 
 """Print tagged debug line and flush (for Slurm logs)."""
 function dbgmsg(args...)
-    TJLFEP_DEBUG || return nothing
-    print("[TJLFEP_DBG] ")
+    TGLFEP_JULIA_DEBUG || return nothing
+    print("[TGLFEP_JULIA_DBG] ")
     println(args...)
     flush(stdout)
     flush(stderr)
@@ -14,7 +14,7 @@ end
 
 """After TJLF_map: mirror Fortran TGLFEP_tglf_map debug fields."""
 function debug_dump_tglf_map(inputsEP, inputsPR, inputTJLF)
-    TJLFEP_DEBUG || return nothing
+    TGLFEP_JULIA_DEBUG || return nothing
     ir = inputsEP.IR
     is = inputsEP.IS_EP + 1
     r_over_a = inputsPR.RMIN[ir] / inputsPR.RMIN[end]
@@ -31,7 +31,7 @@ end
 
 """After TJLF.run in TJLFEP_ky: mirror Fortran post-tglf_run debug."""
 function debug_dump_ky_postrun(inputsEP, inputTJLF, gamma_out, freq_out, n::Int)
-    TJLFEP_DEBUG || return nothing
+    TGLFEP_JULIA_DEBUG || return nothing
     n <= length(gamma_out) || return nothing
     dbgmsg("ky_postrun n=", n, " gamma=", gamma_out[n], " freq=", freq_out[n],
         " lkeep=", freq_out[n] < inputsEP.FREQ_AE_UPPER && gamma_out[n] > inputsEP.GAMMA_THRESH)
@@ -40,17 +40,17 @@ end
 
 """First kwscale combo only."""
 function debug_dump_kw_combo(inputsEP, i::Int)
-    TJLFEP_DEBUG || return nothing
+    TGLFEP_JULIA_DEBUG || return nothing
     i == 1 || return nothing
     dbgmsg("kwscale i=", i, " factor_in=", inputsEP.FACTOR_IN,
         " kyhat_in=", inputsEP.KYHAT_IN, " width_in=", inputsEP.WIDTH_IN)
     return nothing
 end
 
-"""Per-combo log level from env `TJLFEP_COMBO_LOG` (read at RUNTIME, not baked into the
+"""Per-combo log level from env `TGLFEP_JULIA_COMBO_LOG` (read at RUNTIME, not baked into the
 precompile cache): 0 = off (default), 1 = one line per (combo, mode) with eigenvalues and
 every reject-filter value, 2 = additionally dump the mapped TJLF inputs per combo."""
-_combo_log_level() = something(tryparse(Int, get(ENV, "TJLFEP_COMBO_LOG", "0")), 0)
+_combo_log_level() = something(tryparse(Int, get(ENV, "TGLFEP_JULIA_COMBO_LOG", "0")), 0)
 
 """End of TJLFEP_ky: full per-combo, per-mode record — eigenvalue, keep decision, and the
 raw filter metrics (tearing amplitude, QL ratio, <theta^2>, pinches) that produced it.

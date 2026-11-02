@@ -15,12 +15,12 @@ set -uo pipefail
 module load cudatoolkit/12.9
 module load julia/1.11.7
 export JULIA_DEPOT_PATH="${PSCRATCH}/.julia${JULIA_DEPOT_PATH:+:${JULIA_DEPOT_PATH}}"
-export TJLFEP_FILE_ONLY=1 USE_GPU=1 JULIA_CUDA_USE_COMPAT=false
+export TGLFEP_JULIA_FILE_ONLY=1 USE_GPU=1 JULIA_CUDA_USE_COMPAT=false
 
-TJLFEP_ROOT="${TJLFEP_ROOT:-/pscratch/sd/t/tneiser/.julia/dev/TJLFEP}"
-GPU_SYSIMG="${TJLFEP_GPU_SYSIMAGE:-${TJLFEP_ROOT}/dev/TJLFEP_gpu_sysimage.so}"
+TGLFEP_JULIA_ROOT="${TGLFEP_JULIA_ROOT:-/pscratch/sd/t/tneiser/.julia/dev/TJLFEP}"
+GPU_SYSIMG="${TGLFEP_JULIA_GPU_SYSIMAGE:-${TGLFEP_JULIA_ROOT}/dev/TGLFEP_JULIA_gpu_sysimage.so}"
 if [[ -f "${GPU_SYSIMG}" ]]; then SYS=(--sysimage="${GPU_SYSIMG}"); echo "sysimage: ${GPU_SYSIMG}"; else SYS=(); echo "sysimage: JIT"; fi
 
-cd "${TJLFEP_ROOT}/dev"
-stdbuf -oL -eL julia --startup-file=no --project="${TJLFEP_ROOT}" "${SYS[@]}" -t 8 ad/bench_dual_eig_gpu.jl
+cd "${TGLFEP_JULIA_ROOT}/dev"
+stdbuf -oL -eL julia --startup-file=no --project="${TGLFEP_JULIA_ROOT}" "${SYS[@]}" -t 8 ad/bench_dual_eig_gpu.jl
 echo "=== batch done ==="

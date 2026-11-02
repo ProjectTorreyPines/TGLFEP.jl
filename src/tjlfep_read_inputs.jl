@@ -722,7 +722,7 @@ function readTGLFEP(filename::String, ir_exp::Vector{Int64}; nmodes::Int = _nmod
     =#
     # See TGLFEP_interface.f90:
     jtscale_max = 1
-    # nmodes (number of eigenmodes kept) is a user input: `nmodes` kwarg / TJLFEP_NMODES env
+    # nmodes (number of eigenmodes kept) is a user input: `nmodes` kwarg / TGLFEP_JULIA_NMODES env
     # (default 4). Used to size the keep/reject vectors in the Options constructor below.
 
     # NR is derived from the profile! This means that in order to read TJLFEP in Julia, we have to call the previous inputMTGLF

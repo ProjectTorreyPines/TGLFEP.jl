@@ -7,11 +7,11 @@
 # (Containerfile.gpu); the container's writable overlay absorbs the temp
 # objects and only $SYSIMAGE_PATH (a bind mount) persists.
 #
-# Invoked with plain `julia` (NOT the tjlfep launcher, which unsets
+# Invoked with plain `julia` (NOT the tglfep_julia launcher, which unsets
 # JULIA_CPU_TARGET for JIT use — here we need the image's multi-target value).
 
 import Pkg
-Pkg.activate("/opt/tjlfep")
+Pkg.activate("/opt/tglfep_julia")
 using PackageCompiler
 
 # The image bakes a multi-target JULIA_CPU_TARGET (znver3/znver4/
@@ -22,7 +22,7 @@ using PackageCompiler
 @assert haskey(ENV, "JULIA_CPU_TARGET") "JULIA_CPU_TARGET must be set (baked into the image ENV)"
 cpu_target = ENV["JULIA_CPU_TARGET"]
 
-sysimage_path = get(ENV, "SYSIMAGE_PATH", "/out/sys_tjlfep_gpu.so")
+sysimage_path = get(ENV, "SYSIMAGE_PATH", "/out/sys_tglfep_julia_gpu.so")
 mkpath(dirname(sysimage_path))
 
 # Two modes:
@@ -44,7 +44,7 @@ if isempty(stmts)
         [:CUDA, :TJLF, :TJLFEP];
         sysimage_path,
         precompile_execution_file = joinpath(@__DIR__, "precompile_gpu_workload_container.jl"),
-        project = "/opt/tjlfep",
+        project = "/opt/tglfep_julia",
         cpu_target,
     )
 else
@@ -53,7 +53,7 @@ else
         [:CUDA, :TJLF, :TJLFEP];
         sysimage_path,
         precompile_statements_file = stmts,
-        project = "/opt/tjlfep",
+        project = "/opt/tglfep_julia",
         cpu_target,
     )
 end

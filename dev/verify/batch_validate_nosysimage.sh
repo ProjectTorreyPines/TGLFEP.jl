@@ -19,14 +19,14 @@ export JULIA_DEPOT_PATH="${PSCRATCH}/.julia"
 export SCAN_N=20
 export N_BASIS=32
 
-TJLFEP_ROOT="${TJLFEP_ROOT:-/pscratch/sd/t/tneiser/.julia/dev/TJLFEP}"
-cd "${TJLFEP_ROOT}/dev"
+TGLFEP_JULIA_ROOT="${TGLFEP_JULIA_ROOT:-/pscratch/sd/t/tneiser/.julia/dev/TJLFEP}"
+cd "${TGLFEP_JULIA_ROOT}/dev"
 
 echo "=== TJLFEP validate (no sysimage) SCAN_N=$SCAN_N ==="
 julia --version
 
-julia --project="${TJLFEP_ROOT}" -e 'using Pkg; Pkg.instantiate()'
+julia --project="${TGLFEP_JULIA_ROOT}" -e 'using Pkg; Pkg.instantiate()'
 
-julia --project="${TJLFEP_ROOT}" -t "${SLURM_CPUS_PER_TASK:-32}" verify/validate_nosysimage.jl
+julia --project="${TGLFEP_JULIA_ROOT}" -t "${SLURM_CPUS_PER_TASK:-32}" verify/validate_nosysimage.jl
 
 echo "=== validate finished ==="

@@ -27,8 +27,8 @@ module load cudatoolkit/12.9 julia/1.11.7
 export JULIA_DEPOT_PATH="${PSCRATCH}/.julia"
 export JULIA_CUDA_USE_COMPAT=false
 
-TJLFEP_ROOT="${TJLFEP_ROOT:-/pscratch/sd/t/tneiser/.julia/dev/TJLFEP}"
-cd "${TJLFEP_ROOT}"
+TGLFEP_JULIA_ROOT="${TGLFEP_JULIA_ROOT:-/pscratch/sd/t/tneiser/.julia/dev/TJLFEP}"
+cd "${TGLFEP_JULIA_ROOT}"
 echo "host: $(hostname)  date: $(date)"
 nvidia-smi -L 2>/dev/null | head -1 || true
 
@@ -41,7 +41,7 @@ timeit () {  # $1 = label, $2 = image, $3 = julia -e expr
     python3 -c "print(f'  LOADTIME variant=$1 rep=$4 sec={float(\"$t1\")-float(\"$t0\"):.2f}')"
 }
 
-for img in build/TJLFEP_gpu_sysimage.so build/TJLFEP_gpu_generic_sysimage.so; do
+for img in build/TGLFEP_JULIA_gpu_sysimage.so build/TGLFEP_JULIA_gpu_generic_sysimage.so; do
     [[ -f "$img" ]] || { echo "missing $img"; continue; }
     echo "=== $img ($(ls -lh "$img" | awk '{print $5}')) ==="
     julia --startup-file=no --sysimage="$img" --project=. -e 'exit()' >/dev/null 2>&1   # warm FS cache

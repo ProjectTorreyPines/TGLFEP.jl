@@ -2,15 +2,15 @@
 # Publish a locally-built TJLFEP container image to the GitHub Container
 # Registry:
 #
-#     ghcr.io/projecttorreypines/tjlfep:<version><suffix>
+#     ghcr.io/projecttorreypines/tglfep_julia:<version><suffix>
 #
 # linux/amd64 only — no manifest lists or per-arch tags (simplification vs the
 # FUSE publisher this is adapted from). Run AFTER build.sh (or the gpu-sysimage
 # bake) on the same node: the image lives in the node-local podman store.
 #
-#     TJLFEP_ENVIRONMENT=v2.0.14 ./deploy/container/publish_ghcr.sh
-#     TJLFEP_ENVIRONMENT=v2.0.14 TAG_SUFFIX=-imas ./deploy/container/publish_ghcr.sh
-#     TJLFEP_ENVIRONMENT=v2.0.14 TAG_SUFFIX=-gpu ./deploy/container/publish_ghcr.sh
+#     TGLFEP_JULIA_ENVIRONMENT=v2.0.14 ./deploy/container/publish_ghcr.sh
+#     TGLFEP_JULIA_ENVIRONMENT=v2.0.14 TAG_SUFFIX=-imas ./deploy/container/publish_ghcr.sh
+#     TGLFEP_JULIA_ENVIRONMENT=v2.0.14 TAG_SUFFIX=-gpu ./deploy/container/publish_ghcr.sh
 #
 # LATEST=1 additionally moves :latest (or :latest-imas) to this version. Never
 # allowed for -gpu tags: `latest` must always point at a CI-reproducible
@@ -23,19 +23,19 @@
 # NOTE: the FIRST push creates the GHCR package with PRIVATE visibility. To let
 # other sites pull without authentication (required for `apptainer pull` on
 # Defiant), an org owner must make it public once at:
-#   https://github.com/orgs/ProjectTorreyPines/packages/container/package/tjlfep
+#   https://github.com/orgs/ProjectTorreyPines/packages/container/package/tglfep_julia
 #   -> Package settings -> Change visibility.
 
 set -euo pipefail
 
 if [[ $# -gt 0 ]]; then
     echo "ERROR: this script takes no positional arguments. Set the version" >&2
-    echo "       via TJLFEP_ENVIRONMENT=$1 instead." >&2
+    echo "       via TGLFEP_JULIA_ENVIRONMENT=$1 instead." >&2
     exit 1
 fi
 
-version="${TJLFEP_ENVIRONMENT:-}"
-[[ -n "$version" ]] || { echo "ERROR: set TJLFEP_ENVIRONMENT (e.g. v2.0.14)" >&2; exit 1; }
+version="${TGLFEP_JULIA_ENVIRONMENT:-}"
+[[ -n "$version" ]] || { echo "ERROR: set TGLFEP_JULIA_ENVIRONMENT (e.g. v2.0.14)" >&2; exit 1; }
 
 suffix="${TAG_SUFFIX:-}"
 case "$suffix" in
@@ -48,8 +48,8 @@ if [[ "${LATEST:-0}" == "1" && "$suffix" == *-gpu ]]; then
     exit 1
 fi
 
-dest="ghcr.io/projecttorreypines/tjlfep"
-image="localhost/tjlfep:${version}${suffix}"
+dest="ghcr.io/projecttorreypines/tglfep_julia"
+image="localhost/tglfep_julia:${version}${suffix}"
 
 command -v podman-hpc >/dev/null || { echo "ERROR: podman-hpc not found — run on Perlmutter" >&2; exit 1; }
 

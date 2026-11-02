@@ -1,6 +1,6 @@
 name: container
 
-# Build and publish the TJLFEP container to ghcr.io/projecttorreypines/tjlfep.
+# Build and publish the TJLFEP container to ghcr.io/projecttorreypines/tglfep_julia.
 #
 # Two variants build in parallel on GitHub-hosted runners (linux/amd64 only —
 # no sysimage in CI, so plain ubuntu runners suffice; the GPU-traced sysimage
@@ -19,14 +19,14 @@ name: container
 #
 # NOTE: the FIRST push creates the GHCR package with PRIVATE visibility. An org
 # owner must flip it public once (required for unauthenticated `apptainer pull`
-# on Defiant): https://github.com/orgs/ProjectTorreyPines/packages/container/package/tjlfep
+# on Defiant): https://github.com/orgs/ProjectTorreyPines/packages/container/package/tglfep_julia
 
 on:
   release:
     types: [published]
   workflow_dispatch:
     inputs:
-      tjlfep_version:
+      tglfep_julia_version:
         description: "TJLFEP version to build (e.g. v2.0.14); empty = newest in FuseRegistry"
         required: false
         default: ""
@@ -49,7 +49,7 @@ permissions:
   packages: write
 
 env:
-  IMAGE: ghcr.io/projecttorreypines/tjlfep
+  IMAGE: ghcr.io/projecttorreypines/tglfep_julia
 
 jobs:
   version:
@@ -62,7 +62,7 @@ jobs:
       - id: v
         run: |
           v="${{ github.event.release.tag_name }}"
-          [ -z "$v" ] && v="${{ inputs.tjlfep_version }}"
+          [ -z "$v" ] && v="${{ inputs.tglfep_julia_version }}"
           if [ -z "$v" ]; then
             v="v$(curl -sf https://raw.githubusercontent.com/ProjectTorreyPines/FuseRegistry.jl/master/T/TJLFEP/Versions.toml \
                  | sed -n 's/^\["\(.*\)"\]$/\1/p' | sort -V | tail -1)"
@@ -121,15 +121,15 @@ jobs:
         run: |
           docker build \
             -f deploy/container/Containerfile \
-            --build-arg TJLFEP_VARIANT="${{ matrix.variant }}" \
-            --build-arg TJLFEP_VERSION="${{ needs.version.outputs.version }}" \
+            --build-arg TGLFEP_JULIA_VARIANT="${{ matrix.variant }}" \
+            --build-arg TGLFEP_JULIA_VERSION="${{ needs.version.outputs.version }}" \
             -t "$IMAGE:${{ needs.version.outputs.version }}${{ matrix.suffix }}" \
             deploy/container
 
       - name: Verify the image contains the requested TJLFEP version
         run: |
           got="$(docker run --rm "$IMAGE:${{ needs.version.outputs.version }}${{ matrix.suffix }}" \
-                 tjlfep -e 'import TJLFEP; print(pkgversion(TJLFEP))')"
+                 tglfep_julia -e 'import TJLFEP; print(pkgversion(TJLFEP))')"
           echo "image has TJLFEP v$got, requested ${{ needs.version.outputs.version }}"
           [ "v$got" = "${{ needs.version.outputs.version }}" ]
 
@@ -138,7 +138,7 @@ jobs:
       - name: CPU smoke solve (offline)
         run: |
           docker run --rm --network none \
-            "$IMAGE:${{ needs.version.outputs.version }}${{ matrix.suffix }}" tjlfep -e '
+            "$IMAGE:${{ needs.version.outputs.version }}${{ matrix.suffix }}" tglfep_julia -e '
               import TJLFEP
               ex = joinpath(pkgdir(TJLFEP), "examples", "DIIID_202017C42_500ms_v3.1")
               TJLFEP.run_gacode_scan_task(
@@ -150,7 +150,7 @@ jobs:
       - name: Verify TJLFEPIMASExt loads (imas variant)
         if: matrix.variant == 'imas'
         run: |
-          docker run --rm "$IMAGE:${{ needs.version.outputs.version }}${{ matrix.suffix }}" tjlfep -e '
+          docker run --rm "$IMAGE:${{ needs.version.outputs.version }}${{ matrix.suffix }}" tglfep_julia -e '
             import TJLFEP, IMAS, GACODE, TurbulentTransport
             ext = Base.get_extension(TJLFEP, :TJLFEPIMASExt)
             println("TJLFEPIMASExt: ", ext)
@@ -160,7 +160,7 @@ jobs:
         if: inputs.run_full_tests
         run: |
           docker run --rm "$IMAGE:${{ needs.version.outputs.version }}${{ matrix.suffix }}" \
-            tjlfep -e 'import Pkg; Pkg.test("TJLFEP")'
+            tglfep_julia -e 'import Pkg; Pkg.test("TJLFEP")'
 
       - name: Push version tag
         run: docker push "$IMAGE:${{ needs.version.outputs.version }}${{ matrix.suffix }}"

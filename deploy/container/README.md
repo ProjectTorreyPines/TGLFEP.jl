@@ -1,6 +1,6 @@
 # TJLFEP container
 
-Self-contained TJLFEP images on `ghcr.io/projecttorreypines/tjlfep` for
+Self-contained TJLFEP images on `ghcr.io/projecttorreypines/tglfep_julia` for
 **standalone** file-based runs (`input.TGLFEP` / `input.gacode` workflows,
 `run_gacode_scan_task` / `runTHD_from_gacode`), with CPU **and** GPU capability
 in one image. For the full-FUSE use case, use the
@@ -32,25 +32,25 @@ loads automatically.
 One-command setup:
 
 ```bash
-bash <(curl -fsSL https://raw.githubusercontent.com/ProjectTorreyPines/TGLFEP.jl/master/deploy/container/install_tjlfep_container_nersc.sh)
+bash <(curl -fsSL https://raw.githubusercontent.com/ProjectTorreyPines/TGLFEP.jl/master/deploy/container/install_tglfep_julia_container_nersc.sh)
 ```
 
 or by hand:
 
 ```bash
-podman-hpc pull ghcr.io/projecttorreypines/tjlfep:v2.0.14
-podman-hpc tag ghcr.io/projecttorreypines/tjlfep:v2.0.14 localhost/tjlfep:v2.0.14
-podman-hpc migrate tjlfep:v2.0.14
+podman-hpc pull ghcr.io/projecttorreypines/tglfep_julia:v2.0.14
+podman-hpc tag ghcr.io/projecttorreypines/tglfep_julia:v2.0.14 localhost/tglfep_julia:v2.0.14
+podman-hpc migrate tglfep_julia:v2.0.14
 
 # CPU (any node)
-podman-hpc run --rm -it localhost/tjlfep:v2.0.14
+podman-hpc run --rm -it localhost/tglfep_julia:v2.0.14
 
 # GPU (inside a GPU allocation; --gpu injects the host driver)
-podman-hpc run --rm --gpu -it localhost/tjlfep:v2.0.14
+podman-hpc run --rm --gpu -it localhost/tglfep_julia:v2.0.14
 ```
 
-The in-image `tjlfep` launcher starts Julia against the baked project
-(`/opt/tjlfep`), auto-loads the GPU sysimage when present (`-gpu` tags), and
+The in-image `tglfep_julia` launcher starts Julia against the baked project
+(`/opt/tglfep_julia`), auto-loads the GPU sysimage when present (`-gpu` tags), and
 prepends a writable `$HOME/.julia_tjlfep_container` depot when the image
 depot is read-only.
 
@@ -70,15 +70,15 @@ Xeon 8562Y+ — covered natively by the `sapphirerapids` sysimage target):
 # set BOTH to scratch first — the OCI->SIF conversion of an ~8.6 GB image
 # blows through a home quota otherwise
 export APPTAINER_CACHEDIR=/path/to/scratch/cache APPTAINER_TMPDIR=/path/to/scratch/tmp
-apptainer pull tjlfep.sif docker://ghcr.io/projecttorreypines/tjlfep:v2.0.14-gpu
-apptainer exec --nv tjlfep.sif tjlfep -e 'import CUDA; @show CUDA.functional()'
+apptainer pull tglfep_julia.sif docker://ghcr.io/projecttorreypines/tglfep_julia:v2.0.14-gpu
+apptainer exec --nv tglfep_julia.sif tglfep_julia -e 'import CUDA; @show CUDA.functional()'
 ```
 
 - `--nv` injects the host driver; the baked 12.9 runtime runs cleanly on
   Defiant's CUDA 13.0 driver via forward compat (verified: real GPU solves,
   identical `sfmin` to the CPU path). If a future driver rejects 12.9, re-pin
   in your writable home depot:
-  `tjlfep -e 'import CUDA; CUDA.set_runtime_version!(v"12.x")'` — the launcher's
+  `tglfep_julia -e 'import CUDA; CUDA.set_runtime_version!(v"12.x")'` — the launcher's
   home-depot fallback makes the new preference stick.
 - SIF images are read-only: the launcher automatically prepends
   `$HOME/.julia_tjlfep_container` as the first (writable) depot.
@@ -92,14 +92,14 @@ apptainer exec --nv tjlfep.sif tjlfep -e 'import CUDA; @show CUDA.functional()'
 
 In a batch script, wrap the Julia invocation in the container — no
 `module load`, no `JULIA_DEPOT_PATH`, no `--project`/`--sysimage` flags
-(the `tjlfep` launcher supplies the baked project and, on `-gpu` tags, the
+(the `tglfep_julia` launcher supplies the baked project and, on `-gpu` tags, the
 sysimage, and passes any remaining arguments to `julia`). With your case
 directory holding `input.gacode` + `input.TGLFEP`:
 
 ```bash
 # Defiant / Apptainer
-srun apptainer exec --nv --bind "$CASE_DIR" tjlfep_v2.0.14-gpu.sif \
-    tjlfep -t "$SLURM_CPUS_PER_TASK" -e '
+srun apptainer exec --nv --bind "$CASE_DIR" tglfep_julia_v2.0.14-gpu.sif \
+    tglfep_julia -t "$SLURM_CPUS_PER_TASK" -e '
         import CUDA, TJLFEP
         TJLFEP.run_gacode_scan_task(
             ENV["CASE_DIR"] * "/input.gacode", ENV["CASE_DIR"] * "/input.TGLFEP",
@@ -110,7 +110,7 @@ srun apptainer exec --nv --bind "$CASE_DIR" tjlfep_v2.0.14-gpu.sif \
 # Perlmutter / podman-hpc: same payload, different wrapper — podman shares
 # nothing by default, so mount and pass env explicitly
 srun podman-hpc run --rm --gpu -v "$CASE_DIR":"$CASE_DIR" -e CASE_DIR \
-    localhost/tjlfep:v2.0.14-gpu tjlfep -t "$SLURM_CPUS_PER_TASK" -e '...'
+    localhost/tglfep_julia:v2.0.14-gpu tglfep_julia -t "$SLURM_CPUS_PER_TASK" -e '...'
 ```
 
 Results land in `out_dir` (`task_<i>.jls` per scan index). Drop `--nv` /
@@ -128,9 +128,9 @@ testing without any input files.
 
 ```bash
 ./deploy/container/build.sh                     # lean, local podman-hpc build
-TJLFEP_VARIANT=imas ./deploy/container/build.sh # imas variant
-TJLFEP_ENVIRONMENT=v2.0.14 ./deploy/container/acceptance.sh
-TJLFEP_ENVIRONMENT=v2.0.14 ./deploy/container/publish_ghcr.sh
+TGLFEP_JULIA_VARIANT=imas ./deploy/container/build.sh # imas variant
+TGLFEP_JULIA_ENVIRONMENT=v2.0.14 ./deploy/container/acceptance.sh
+TGLFEP_JULIA_ENVIRONMENT=v2.0.14 ./deploy/container/publish_ghcr.sh
 ```
 
 CI (`workflow_dispatch` or release) builds and pushes the lean + imas tags.
@@ -144,16 +144,16 @@ CI cannot bake the sysimage (the trace executes real GPU solves). On a
 Perlmutter login node:
 
 ```bash
-TJLFEP_ENVIRONMENT=v2.0.14 ./deploy/container/gpu-sysimage/bake_and_publish.sh
+TGLFEP_JULIA_ENVIRONMENT=v2.0.14 ./deploy/container/gpu-sysimage/bake_and_publish.sh
 ```
 
 pulls + migrates the CI image, runs the bake on an A100 (sbatch, m5377_g
-premium, ~1–4 h), layers `sys_tjlfep_gpu.so` in with `Containerfile.gpu`
+premium, ~1–4 h), layers `sys_tglfep_julia_gpu.so` in with `Containerfile.gpu`
 (COPY layer — reproducible, no `podman-hpc commit`), runs CPU acceptance, and
 submits GPU acceptance. Publish after the GPU job passes:
 
 ```bash
-TJLFEP_ENVIRONMENT=v2.0.14 TAG_SUFFIX=-gpu ./deploy/container/publish_ghcr.sh
+TGLFEP_JULIA_ENVIRONMENT=v2.0.14 TAG_SUFFIX=-gpu ./deploy/container/publish_ghcr.sh
 ```
 
 **Defiant variant (Apptainer, no podman-hpc):** the bake is split so the GPU
@@ -166,7 +166,7 @@ image ENV so the result is host-independent). Chain them with
 `--dependency=afterok`, GPU-accept with `defiant_smoke_gpu.sbatch` (binds the
 fresh `.so` at the launcher's path), and publish with
 `defiant_publish_gpu.sh` — `crane append` pushes just the sysimage layer onto
-the already-published base, server-side. `tjlfep_gpu.def` builds a local
+the already-published base, server-side. `tglfep_julia_gpu.def` builds a local
 `-gpu` SIF; if `apptainer build` from a local SIF fails on Lustre
 (unsquashfs uid/gid restore), build the layered tarball instead:
 `crane append -b ghcr.io/...:<v> -f layer.tar -o out.tar` then

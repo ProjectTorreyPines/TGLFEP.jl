@@ -10,7 +10,7 @@
 #   * Julia :ad :wide   the fast single-pass width-aware AD mode (extend_mode=:wide, wide_kdesc=2)
 # Both extended solvers search down to the ballooning-width physics floor WIDTH_FLOOR = 0.5 (2026-10 runs).
 # Sources are pinned per job id (dev/d3d_nb32_scan20_<solver>_<jobid>_tasks/sfmin_scan.txt, merged 20-radius
-# outputs of slurm/tjlfep_gpu_{5N,backfill}.sbatch); override any of them with the environment variables below.
+# outputs of slurm/tglfep_julia_gpu_{5N,backfill}.sbatch); override any of them with the environment variables below.
 # Shows that :wide recovers nearly all of :ad :locate's narrow-width accuracy that the w>=1 grid
 # misses, at a fraction of the cost (see node-hours-vs-nbasis plot). The internal robust_ad/truth
 # reference tiers (matched bit-for-bit by :ad :locate) are documented in

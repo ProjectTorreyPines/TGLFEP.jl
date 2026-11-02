@@ -10,7 +10,7 @@
 #
 # Usage (GPU, file-only):
 #   module load cudatoolkit/12.9 julia/1.11.7 && export JULIA_DEPOT_PATH=$PSCRATCH/.julia
-#   TJLFEP_FILE_ONLY=1 USE_GPU=1 julia --project=. --threads=16 dev/ad/test_exb_earlystop.jl
+#   TGLFEP_JULIA_FILE_ONLY=1 USE_GPU=1 julia --project=. --threads=16 dev/ad/test_exb_earlystop.jl
 #
 # Env knobs: USE_GPU (default 0; 1 batches eigensolves on one A100), NB (basis, default 6),
 #            SCAN_IS (comma list of scan indices, default "15,18"),

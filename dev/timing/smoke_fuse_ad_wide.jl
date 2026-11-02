@@ -7,10 +7,10 @@
 # NOT an accuracy/timing run.
 
 using Pkg
-const TJLFEP_ROOT = get(ENV, "TJLFEP_ROOT", normpath(@__DIR__, "..", ".."))
-const FUSE_ROOT = get(ENV, "FUSE_ROOT", normpath(TJLFEP_ROOT, "..", "FUSE"))
+const TGLFEP_JULIA_ROOT = get(ENV, "TGLFEP_JULIA_ROOT", normpath(@__DIR__, "..", ".."))
+const FUSE_ROOT = get(ENV, "FUSE_ROOT", normpath(TGLFEP_JULIA_ROOT, "..", "FUSE"))
 Pkg.activate(FUSE_ROOT)
-push!(LOAD_PATH, TJLFEP_ROOT)
+push!(LOAD_PATH, TGLFEP_JULIA_ROOT)
 
 logmsg(args...) = (println(args...); flush(stdout); flush(stderr))
 

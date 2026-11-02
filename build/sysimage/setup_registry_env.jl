@@ -1,17 +1,17 @@
 # Create the registry-resolved sysimage BUILD ENVIRONMENT: a plain Julia project whose
 # packages all come from FuseRegistry/General at released versions — no Pkg.develop'ed
 # repos, no maintainer dev tree. Any user can run this; it is the same philosophy as the
-# TJLFEP container install (deploy/container/install_tjlfep_container.jl), from which the
+# TJLFEP container install (deploy/container/install_tglfep_julia_container.jl), from which the
 # version-resolution and pinning logic is adapted.
 #
 # Driven by environment variables (set by the batch_build_*.sh scripts):
-#   TJLFEP_BUILD_ENV       project dir to create/refresh          (required)
-#   TJLFEP_BUILD_VARIANT   "lean" | "full"                        (default lean)
+#   TGLFEP_JULIA_BUILD_ENV       project dir to create/refresh          (required)
+#   TGLFEP_JULIA_BUILD_VARIANT   "lean" | "full"                        (default lean)
 #                          lean: TJLFEP + TJLF + CUDA (file-based path; the
 #                                TJLFEPIMASExt weak-dep extension stays dormant)
 #                          full: + FUSE/IMAS/GACODE/TurbulentTransport (generic
 #                                image; the extension and the actor path bake in)
-#   TJLFEP_BUILD_VERSION   TJLFEP version to install (e.g. "2.0.14"); default =
+#   TGLFEP_JULIA_BUILD_VERSION   TJLFEP version to install (e.g. "2.0.14"); default =
 #                          newest version registered in FuseRegistry
 #
 # CUDA runtime: pinned to the module-provided 12.9 toolkit (`local = "true"`), the
@@ -23,10 +23,10 @@
 import Pkg
 import TOML
 
-build_env = get(ENV, "TJLFEP_BUILD_ENV", "")
-@assert !isempty(build_env) "TJLFEP_BUILD_ENV must point at the build-project directory"
-variant = get(ENV, "TJLFEP_BUILD_VARIANT", "lean")
-@assert variant in ("lean", "full") "TJLFEP_BUILD_VARIANT must be \"lean\" or \"full\", got \"$variant\""
+build_env = get(ENV, "TGLFEP_JULIA_BUILD_ENV", "")
+@assert !isempty(build_env) "TGLFEP_JULIA_BUILD_ENV must point at the build-project directory"
+variant = get(ENV, "TGLFEP_JULIA_BUILD_VARIANT", "lean")
+@assert variant in ("lean", "full") "TGLFEP_JULIA_BUILD_VARIANT must be \"lean\" or \"full\", got \"$variant\""
 
 println("### Ensure registries (FuseRegistry + General)")
 Pkg.activate()
@@ -83,18 +83,18 @@ println("### Resolve TJLFEP version to install")
 # TJLFEP MUST be added at an explicit version: TJLFEP/TJLF cap CUDA at 5.8.x, and with
 # `CUDA` in the same unversioned Pkg.add the resolver prefers the newest CUDA from
 # General and silently holds TJLFEP back (observed: v2.0.0, which doesn't precompile).
-tjlfep_version = String(lstrip(get(ENV, "TJLFEP_BUILD_VERSION", ""), 'v'))
-if isempty(tjlfep_version)
+tglfep_julia_version = String(lstrip(get(ENV, "TGLFEP_JULIA_BUILD_VERSION", ""), 'v'))
+if isempty(tglfep_julia_version)
     # findfirst, not a bare for-loop assignment: at script top level the loop body is
     # soft scope, so `vfile = f` would bind a new local and leave the global "" empty
     vfiles = [joinpath(depot, "registries", "FuseRegistry", "T", "TJLFEP", "Versions.toml")
               for depot in DEPOT_PATH]
     vidx = findfirst(isfile, vfiles)
     vfile = vidx === nothing ? "" : vfiles[vidx]
-    @assert !isempty(vfile) "TJLFEP_BUILD_VERSION unset and no FuseRegistry Versions.toml found in DEPOT_PATH"
-    tjlfep_version = string(maximum(VersionNumber.(keys(TOML.parsefile(vfile)))))
+    @assert !isempty(vfile) "TGLFEP_JULIA_BUILD_VERSION unset and no FuseRegistry Versions.toml found in DEPOT_PATH"
+    tglfep_julia_version = string(maximum(VersionNumber.(keys(TOML.parsefile(vfile)))))
 end
-println("    TJLFEP $tjlfep_version")
+println("    TJLFEP $tglfep_julia_version")
 
 println("### Setup $variant build environment in ", build_env)
 Pkg.activate(build_env)
@@ -104,7 +104,7 @@ Pkg.activate(build_env)
 # GPU run and sysimage was validated against. The full variant lists FUSE and the
 # IMAS/GACODE/TurbulentTransport weak-dep trio directly so create_sysimage can bake them
 # and the TJLFEPIMASExt actor path compiles in.
-packages = [Pkg.PackageSpec(name="TJLFEP", version=tjlfep_version),
+packages = [Pkg.PackageSpec(name="TJLFEP", version=tglfep_julia_version),
             Pkg.PackageSpec(name="TJLF"),
             Pkg.PackageSpec(name="CUDA", version="5.8.5"),
             Pkg.PackageSpec(name="PackageCompiler")]
@@ -117,7 +117,7 @@ Pkg.add(packages)
 
 println("### Sanity checks")
 deps = Dict(info.name => info.version for (_, info) in Pkg.dependencies())
-@assert string(deps["TJLFEP"]) == tjlfep_version "resolver installed TJLFEP $(deps["TJLFEP"]), expected $tjlfep_version (co-added dep held it back?)"
+@assert string(deps["TJLFEP"]) == tglfep_julia_version "resolver installed TJLFEP $(deps["TJLFEP"]), expected $tglfep_julia_version (co-added dep held it back?)"
 for p in ("TJLF", "CUDA", (variant == "full" ? ("FUSE", "IMAS", "GACODE", "TurbulentTransport") : ())...)
     println("    $p $(deps[p])")
 end

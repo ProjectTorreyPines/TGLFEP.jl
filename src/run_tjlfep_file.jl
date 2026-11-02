@@ -31,7 +31,7 @@ function _with_mps_team(f, n_team::Int)
         vis = get(ENV, "CUDA_VISIBLE_DEVICES", "0")
         threads_per = parse(Int, get(ENV, "JULIA_WORKER_THREADS", "2"))
         proj = pkgdir(TJLFEP)
-        sysimg = get(ENV, "TJLFEP_GPU_SYSIMAGE", "")
+        sysimg = get(ENV, "TGLFEP_JULIA_GPU_SYSIMAGE", "")
         sysflag = (!isempty(sysimg) && isfile(sysimg)) ? `--sysimage=$(sysimg)` : ``
         for _ in 1:n_team
             env = copy(base_env)
@@ -500,10 +500,10 @@ EXPRO-derived setup, and runs the scan.
 - `solver::Symbol=:grid`   - critical-factor solver (`:grid`, `:ad`, `:truth`, ...)
 - `refine_rounds::Int=1`   - AD (ky,width) refinement passes
 - `nmodes::Int`            - number of eigenmodes kept per solve (default from
-  `TJLFEP_NMODES`, else 4). Applies to all solvers; raise it to catch a higher
+  `TGLFEP_JULIA_NMODES`, else 4). Applies to all solvers; raise it to catch a higher
   (e.g. 5th) AE mode.
 - `k_max::Int`             - number of `:grid` scale-factor bracketing rounds
-  (default from `TJLFEP_K_MAX`, else 4). `:grid` solver only (inert for the AD solvers).
+  (default from `TGLFEP_JULIA_K_MAX`, else 4). `:grid` solver only (inert for the AD solvers).
 
 Returns `(width, kymark_out, SFmin, dpdr_crit_out, dndr_crit_out)`.
 

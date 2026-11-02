@@ -2,7 +2,7 @@
 # everything the per-radius tasks (phase 2) and the merge (phase 3) need. Doing this once avoids
 # 20x FUSE.init (~218 s each).
 #
-# Writes into TJLFEP_OUT_DIR:
+# Writes into TGLFEP_JULIA_OUT_DIR:
 #   dd_in.json      -- the initialized ITER dd (IMAS json)
 #   optionsdict.jls -- the TGLF-EP OptionsDict (identical to what the phase-3 actor rebuilds)
 #   rho_scan.jls    -- the SCAN_N rho_tor_norm scan grid

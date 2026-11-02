@@ -156,17 +156,17 @@ Widths below this floor are therefore outside the model's validity and every sea
 Fortran TGLF-EP box `[WIDTH_MIN, WIDTH_MAX] = [1, 2]` lies above the floor, so Fortran-faithful (`:grid`)
 runs with the standard inputs are unaffected.
 
-For numerical studies ONLY, the environment variable `TJLFEP_WIDTH_FLOOR` overrides the value.
+For numerical studies ONLY, the environment variable `TGLFEP_JULIA_WIDTH_FLOOR` overrides the value.
 """
 const WIDTH_FLOOR = 0.5
 
 """
     width_floor() -> Float64
 
-The effective ballooning-width floor: [`WIDTH_FLOOR`](@ref) unless `ENV["TJLFEP_WIDTH_FLOOR"]` overrides
+The effective ballooning-width floor: [`WIDTH_FLOOR`](@ref) unless `ENV["TGLFEP_JULIA_WIDTH_FLOOR"]` overrides
 it (numerical studies only; results below 0.5 are outside the TGLF-EP model's validity).
 """
-width_floor() = parse(Float64, get(ENV, "TJLFEP_WIDTH_FLOOR", string(WIDTH_FLOOR)))
+width_floor() = parse(Float64, get(ENV, "TGLFEP_JULIA_WIDTH_FLOOR", string(WIDTH_FLOOR)))
 
 """
     floor_w_lo(w_lo; what="w_lo") -> Float64
@@ -176,7 +176,7 @@ Clamp a narrow-width search floor up to [`width_floor`](@ref), warning once when
 function floor_w_lo(w_lo::Real; what::AbstractString = "w_lo")
     wf = width_floor()
     if w_lo < wf
-        @warn "TJLFEP: $(what) = $(w_lo) is below the ballooning-width physics floor WIDTH_FLOOR = $(wf); using $(wf) (override with ENV TJLFEP_WIDTH_FLOOR for numerical studies only)" maxlog = 1
+        @warn "TJLFEP: $(what) = $(w_lo) is below the ballooning-width physics floor WIDTH_FLOOR = $(wf); using $(wf) (override with ENV TGLFEP_JULIA_WIDTH_FLOOR for numerical studies only)" maxlog = 1
         return wf
     end
     return Float64(w_lo)
@@ -197,7 +197,7 @@ function enforce_width_floor!(o::Options)
         v = getfield(o, f)
         (v === missing || (v isa AbstractFloat && isnan(v))) && continue
         if v < wf
-            @warn "TJLFEP: input $(f) = $(v) is below the ballooning-width physics floor WIDTH_FLOOR = $(wf); clamping to $(wf) (override with ENV TJLFEP_WIDTH_FLOOR for numerical studies only)" maxlog = 1
+            @warn "TJLFEP: input $(f) = $(v) is below the ballooning-width physics floor WIDTH_FLOOR = $(wf); clamping to $(wf) (override with ENV TGLFEP_JULIA_WIDTH_FLOOR for numerical studies only)" maxlog = 1
             setfield!(o, f, oftype(v, wf))
         end
     end

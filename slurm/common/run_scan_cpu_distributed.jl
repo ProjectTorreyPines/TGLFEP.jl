@@ -12,8 +12,8 @@
 #   OUT_DIR                                 output directory (created)
 #   SOLVER, REFINE_ROUNDS                   grid | ad | robust_ad | truth ; robust_ad/truth rounds
 #   JULIA_WORKER_THREADS                    threads per worker (default: SLURM_CPUS_PER_TASK)
-#   TJLFEP_SYSIMAGE                         optional CPU sysimage for the workers ("" = JIT)
-#   TJLFEP_INSTANTIATE=1                    run Pkg.instantiate()+precompile() first (never
+#   TGLFEP_JULIA_SYSIMAGE                         optional CPU sysimage for the workers ("" = JIT)
+#   TGLFEP_JULIA_INSTANTIATE=1                    run Pkg.instantiate()+precompile() first (never
 #                                           against the read-only published CFS env)
 
 function logmsg(args...)
@@ -22,12 +22,12 @@ function logmsg(args...)
     flush(stderr)
 end
 
-const TJLFEP_ROOT = normpath(@__DIR__, "..", "..")
+const TGLFEP_JULIA_ROOT = normpath(@__DIR__, "..", "..")
 const PROJECT = dirname(Base.active_project())
-const CASE_DIR = get(ENV, "CASE_DIR", joinpath(TJLFEP_ROOT, "examples", "DIIID_202017C42_500ms_v3.1"))
+const CASE_DIR = get(ENV, "CASE_DIR", joinpath(TGLFEP_JULIA_ROOT, "examples", "DIIID_202017C42_500ms_v3.1"))
 const GACODE_FILE = get(ENV, "GACODE_FILE", joinpath(CASE_DIR, "input.gacode"))
 const TGLFEP_FILE = get(ENV, "TGLFEP_FILE", joinpath(CASE_DIR, "input_scan20_nb32.TGLFEP"))
-const OUT_DIR = get(ENV, "OUT_DIR", joinpath(TJLFEP_ROOT, "runs", "tjlfep_cpu_$(get(ENV, "SLURM_JOB_ID", "local"))"))
+const OUT_DIR = get(ENV, "OUT_DIR", joinpath(TGLFEP_JULIA_ROOT, "runs", "tglfep_julia_cpu_$(get(ENV, "SLURM_JOB_ID", "local"))"))
 const THREADS_PER_WORKER = parse(Int, get(ENV, "JULIA_WORKER_THREADS", get(ENV, "SLURM_CPUS_PER_TASK", "64")))
 
 @assert isfile(GACODE_FILE) "missing $GACODE_FILE"
@@ -36,7 +36,7 @@ mkpath(OUT_DIR)
 
 job_t0 = time()
 
-if get(ENV, "TJLFEP_INSTANTIATE", "0") == "1"
+if get(ENV, "TGLFEP_JULIA_INSTANTIATE", "0") == "1"
     using Pkg
     tp = time()
     Pkg.instantiate()
@@ -63,7 +63,7 @@ const N_BASIS = opts.N_BASIS
 
 logmsg("TIMING_START backend=julia device=cpu path=distributed nodes=$(get(ENV, "SLURM_NNODES", "?")) tasks=$(get(ENV, "SLURM_NTASKS", "?")) SCAN_N=$SCAN_N N_BASIS=$N_BASIS")
 
-_sysimage = get(ENV, "TJLFEP_SYSIMAGE", "")
+_sysimage = get(ENV, "TGLFEP_JULIA_SYSIMAGE", "")
 exeflags = if !isempty(_sysimage) && isfile(_sysimage)
     `--project=$(PROJECT) --sysimage=$(_sysimage) -t $(THREADS_PER_WORKER) --startup-file=no`
 else

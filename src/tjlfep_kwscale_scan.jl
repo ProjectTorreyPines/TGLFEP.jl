@@ -715,7 +715,7 @@ function kwscale_scan(inputsEP::Options{T}, inputsPR::profile{T}, printout::Bool
     if _probe
         _tot = (time_ns() - _t_scan) / 1e9
         _ncombo = _PROBE_N[]
-        @info string("[TJLFEP_PROBE] kwscale_scan radius IR=", inputsEP.IR,
+        @info string("[TGLFEP_JULIA_PROBE] kwscale_scan radius IR=", inputsEP.IR,
             " inner=", inner, " team=", team === nothing ? 0 : length(team),
             " : total=", round(_tot; digits=2), "s",
             " | combo_map=", round(_map_wall; digits=2), "s",

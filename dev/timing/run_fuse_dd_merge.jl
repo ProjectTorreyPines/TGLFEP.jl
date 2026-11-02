@@ -1,11 +1,11 @@
 # Phase 3 of the FUSE-dd MPS-team SPMD layout: assemble the per-radius results (phase 2) into the
 # critical gradients + EP profiles, by running the NORMAL FUSE.ActorTJLFEP. Setting
-# TJLFEP_PRECOMPUTED_DIR makes TJLFEP.runTHD(dd) load tasks/task_<i>.jls instead of re-running the
+# TGLFEP_JULIA_PRECOMPUTED_DIR makes TJLFEP.runTHD(dd) load tasks/task_<i>.jls instead of re-running the
 # kw-scans, so ALL of the cross-radius post-processing + ALPHA + dd update is the production actor
 # path (no duplication). This step is CPU-only and cheap.
 #
-# Writes into TJLFEP_OUT_DIR (consumed by run_tjlfep / load_tjlfep_results):
-#   tjlfep_results.jls   dd_out.json
+# Writes into TGLFEP_JULIA_OUT_DIR (consumed by run_tjlfep / load_tjlfep_results):
+#   tglfep_julia_results.jls   dd_out.json
 
 include(joinpath(@__DIR__, "fuse_dd_common.jl"))
 
@@ -19,11 +19,11 @@ for i in 1:SCAN_N
 end
 
 # Point runTHD(dd) at the precomputed per-radius results (SPMD merge mode).
-ENV["TJLFEP_PRECOMPUTED_DIR"] = TASKS_DIR
+ENV["TGLFEP_JULIA_PRECOMPUTED_DIR"] = TASKS_DIR
 
 job_t0 = time()
 logmsg("=== fuse-dd merge (SPMD) === CASE=$CASE SCAN_N=$SCAN_N OUT_DIR=$OUT_DIR")
-logmsg("TJLFEP_PRECOMPUTED_DIR=$TASKS_DIR")
+logmsg("TGLFEP_JULIA_PRECOMPUTED_DIR=$TASKS_DIR")
 
 ini, act = build_act()
 dd = IMAS.json2imas(DD_IN_JSON)
@@ -43,7 +43,7 @@ end
 
 n_EP = (actor.alpha !== nothing) ? actor.alpha.n_EP : Float64[]
 p_EP = (actor.alpha !== nothing) ? actor.alpha.p_EP : Float64[]
-Serialization.serialize(joinpath(OUT_DIR, "tjlfep_results.jls"),
+Serialization.serialize(joinpath(OUT_DIR, "tglfep_julia_results.jls"),
     (; rho_scan=act.ActorTJLFEP.rho_scan, SFmin=actor.SFmin, width=actor.width,
         kymark=actor.kymark, n_EP=n_EP, p_EP=p_EP))
 try
@@ -51,6 +51,6 @@ try
 catch err
     logmsg("note: imas2json(dd) failed ($(typeof(err))); skipping dd_out.json")
 end
-logmsg("persisted results to $OUT_DIR (tjlfep_results.jls + dd_out.json)")
+logmsg("persisted results to $OUT_DIR (tglfep_julia_results.jls + dd_out.json)")
 logmsg("TIMING_RESULT path=fuse-dd-spmd phase=merge_total seconds=$(round(time() - job_t0; digits=3))")
 logmsg("=== merge done ===")

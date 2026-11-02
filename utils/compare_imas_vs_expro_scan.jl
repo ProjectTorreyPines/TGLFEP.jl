@@ -2,16 +2,16 @@
 # Compare Julia IMAS InputTGLFEP/extraEP vs GACODE EXPRO (expro_util.f90 logic) on a radial scan.
 #
 # Run (from the repo root):
-#   TJLFEP_FILE_ONLY=0 julia --startup-file=no --project=. utils/compare_imas_vs_expro_scan.jl
+#   TGLFEP_JULIA_FILE_ONLY=0 julia --startup-file=no --project=. utils/compare_imas_vs_expro_scan.jl
 #
 # Optional env:
 #   CASE_DIR, IS_EP (IMAS index, default 1), RHO_SCAN (comma-separated)
 
-ENV["TJLFEP_FILE_ONLY"] = "0"
+ENV["TGLFEP_JULIA_FILE_ONLY"] = "0"
 
 using Pkg
-const TJLFEP_ROOT = normpath(@__DIR__, "..")
-Pkg.activate(TJLFEP_ROOT)
+const TGLFEP_JULIA_ROOT = normpath(@__DIR__, "..")
+Pkg.activate(TGLFEP_JULIA_ROOT)
 
 using TJLFEP
 using TJLFEP: InputTGLFEP, expro_bound_deriv, expro_log_gradients, read_gacode_scalar_field, read_gacode_ion_field
@@ -21,7 +21,7 @@ using Printf
 using Statistics
 
 const CASE_DIR = get(ENV, "CASE_DIR",
-    joinpath(TJLFEP_ROOT, "examples", "DIIID_202017C42_500ms_v3.1"))
+    joinpath(TGLFEP_JULIA_ROOT, "examples", "DIIID_202017C42_500ms_v3.1"))
 const GACODE_FILE = joinpath(CASE_DIR, "dump.gacode")
 const IS_EP_IMAS = parse(Int, get(ENV, "IS_EP", "1"))
 const IS_EP_GACODE = parse(Int, get(ENV, "IS_EP_GACODE", string(IS_EP_IMAS + 1)))  # Fortran input.TGLFEP IS_EP=2

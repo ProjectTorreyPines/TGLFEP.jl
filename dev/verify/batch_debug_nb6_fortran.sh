@@ -21,10 +21,10 @@ export GACODE_ROOT="${GACODE_ROOT:-/pscratch/sd/t/tneiser/gacode_cpu/gacode}"
 export GACODE_PLATFORM="${GACODE_PLATFORM:-PERLMUTTER_CPU}"
 export TGLFEP_DEBUG=1
 
-TJLFEP_ROOT="${TJLFEP_ROOT:-/pscratch/sd/t/tneiser/.julia/dev/TJLFEP}"
-CASE_DIR="${CASE_DIR:-${TJLFEP_ROOT}/examples/DIIID_202017C42_500ms_v3.1}"
+TGLFEP_JULIA_ROOT="${TGLFEP_JULIA_ROOT:-/pscratch/sd/t/tneiser/.julia/dev/TJLFEP}"
+CASE_DIR="${CASE_DIR:-${TGLFEP_JULIA_ROOT}/examples/DIIID_202017C42_500ms_v3.1}"
 TGLFEP_INPUT="${TGLFEP_INPUT:-${CASE_DIR}/input_singleradius_nb6.TGLFEP}"
-RUN_DIR="${TJLFEP_ROOT}/dev/fortran_runs/debug_nb6_${SLURM_JOB_ID:-local}"
+RUN_DIR="${TGLFEP_JULIA_ROOT}/dev/fortran_runs/debug_nb6_${SLURM_JOB_ID:-local}"
 
 set +u
 # shellcheck source=/dev/null

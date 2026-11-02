@@ -50,9 +50,9 @@ const REFINE_ROUNDS = parse(Int, get(ENV, "REFINE_ROUNDS", "1"))
 const TEAM_GPUS = let s = get(ENV, "TEAM_GPUS", get(ENV, "CUDA_VISIBLE_DEVICES", "0"))
     String.(split(s, ',', keepempty=false))
 end
-# Optional GPU-worker sysimage (TJLFEP_gpu_generic_sysimage.so): bakes the TJLF/TJLFEP/CUDA GPU
+# Optional GPU-worker sysimage (TGLFEP_JULIA_gpu_generic_sysimage.so): bakes the TJLF/TJLFEP/CUDA GPU
 # eigensolve path so workers skip the ~110 s/team JIT on a cold spawn. Empty -> JIT as before.
-const GPU_SYSIMAGE = get(ENV, "TJLFEP_GPU_SYSIMAGE", "")
+const GPU_SYSIMAGE = get(ENV, "TGLFEP_JULIA_GPU_SYSIMAGE", "")
 const _SYSIMG_FLAGS = (!isempty(GPU_SYSIMAGE) && isfile(GPU_SYSIMAGE)) ? `--sysimage=$(GPU_SYSIMAGE)` : ``
 
 if INNER === :mps_team
@@ -97,7 +97,7 @@ BLAS.set_num_threads(1)
 const CASE   = get(ENV, "CASE_DIR", joinpath(ROOT, "examples", "DIIID_202017C42_500ms_v3.1"))
 const GACODE_PATH = get(ENV, "GACODE_FILE", joinpath(CASE, "input.gacode"))
 const TGLFEP = get(ENV, "TGLFEP_FILE", joinpath(CASE, "input_scan20_nb32.TGLFEP"))
-const OUT_DIR = get(ENV, "OUT_DIR", joinpath(ROOT, "runs", "tjlfep_scan_$(get(ENV, "SLURM_JOB_ID", "local"))_tasks"))
+const OUT_DIR = get(ENV, "OUT_DIR", joinpath(ROOT, "runs", "tglfep_julia_scan_$(get(ENV, "SLURM_JOB_ID", "local"))_tasks"))
 
 @assert isfile(GACODE_PATH) "missing $GACODE_PATH"
 @assert isfile(TGLFEP) "missing $TGLFEP"
@@ -105,7 +105,7 @@ const OUT_DIR = get(ENV, "OUT_DIR", joinpath(ROOT, "runs", "tjlfep_scan_$(get(EN
 opts, _, _ = preprocess_gacode_inputs(GACODE_PATH, TGLFEP)
 scan_n = opts.SCAN_N
 
-printout = get(ENV, "TJLFEP_PRINTOUT", "0") == "1"
+printout = get(ENV, "TGLFEP_JULIA_PRINTOUT", "0") == "1"
 
 const TEAM = INNER === :mps_team ? workers() : nothing
 println("=== gacode scan task (inner=$INNER solver=$SOLVER refine_rounds=$REFINE_ROUNDS) ===")
@@ -137,7 +137,7 @@ function run_one(scan_index::Int)
     # Per-worker probe dump: each MPS team worker reports its own combo count and the time it
     # spent in TJLFEP_ky vs TJLF.run (eigensolve), so we can see whether the workers actually
     # overlapped on the GPU (high combo count per worker at low wall) or time-sliced/serialized.
-    if INNER === :mps_team && get(ENV, "TJLFEP_PROBE", "0") == "1"
+    if INNER === :mps_team && get(ENV, "TGLFEP_JULIA_PROBE", "0") == "1"
         for w in workers()
             n, tky, trun = remotecall_fetch(w) do
                 (TJLFEP._PROBE_N[], TJLFEP._PROBE_KY[], TJLFEP._PROBE_RUN[])

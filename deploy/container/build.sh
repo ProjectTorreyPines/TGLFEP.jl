@@ -5,11 +5,11 @@
 # artifact download, no sysimage) and is fine on a login node:
 #
 #   ./deploy/container/build.sh                 # lean variant
-#   TJLFEP_VARIANT=imas ./deploy/container/build.sh
+#   TGLFEP_JULIA_VARIANT=imas ./deploy/container/build.sh
 #
 # Override the image tag (defaults to the latest FuseRegistry-registered
 # TJLFEP version — the repo publishes no GitHub releases) with:
-#   TJLFEP_ENVIRONMENT=v2.0.14 ./deploy/container/build.sh
+#   TGLFEP_JULIA_ENVIRONMENT=v2.0.14 ./deploy/container/build.sh
 #
 # Share the migrated image across the project (instead of personal SCRATCH):
 #   SQUASH_DIR=/global/cfs/cdirs/m3739/shared_images ./deploy/container/build.sh
@@ -18,29 +18,29 @@ set -euo pipefail
 
 scriptdir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-variant="${TJLFEP_VARIANT:-lean}"
+variant="${TGLFEP_JULIA_VARIANT:-lean}"
 case "$variant" in
     lean|imas) ;;
-    *) echo "ERROR: TJLFEP_VARIANT must be 'lean' or 'imas', got '$variant'" >&2; exit 1 ;;
+    *) echo "ERROR: TGLFEP_JULIA_VARIANT must be 'lean' or 'imas', got '$variant'" >&2; exit 1 ;;
 esac
 
 # Resolve the image tag: explicit override, else the highest version registered
 # in FuseRegistry (TGLFEP.jl has no GitHub releases; FuseRegistry registers by
 # git-tree-sha, so the registry is the source of truth for released versions).
-if [[ -n "${TJLFEP_ENVIRONMENT:-}" ]]; then
-    version="$TJLFEP_ENVIRONMENT"
+if [[ -n "${TGLFEP_JULIA_ENVIRONMENT:-}" ]]; then
+    version="$TGLFEP_JULIA_ENVIRONMENT"
 else
     version="v$(curl -sf https://raw.githubusercontent.com/ProjectTorreyPines/FuseRegistry.jl/master/T/TJLFEP/Versions.toml \
         | sed -n 's/^\["\(.*\)"\]$/\1/p' | sort -V | tail -1)"
 fi
 if [[ -z "$version" || "$version" == "v" ]]; then
-    echo "ERROR: could not determine TJLFEP version (set TJLFEP_ENVIRONMENT)." >&2
+    echo "ERROR: could not determine TJLFEP version (set TGLFEP_JULIA_ENVIRONMENT)." >&2
     exit 1
 fi
 
 suffix=""
 [[ "$variant" == "imas" ]] && suffix="-imas"
-image="tjlfep:${version}${suffix}"
+image="tglfep_julia:${version}${suffix}"
 
 if ! command -v podman-hpc >/dev/null 2>&1; then
     echo "ERROR: podman-hpc not found. Run this on Perlmutter." >&2
@@ -49,8 +49,8 @@ fi
 
 echo "### Building $image (variant: $variant, context: $scriptdir)"
 podman-hpc build -t "$image" \
-    --build-arg TJLFEP_VERSION="$version" \
-    --build-arg TJLFEP_VARIANT="$variant" \
+    --build-arg TGLFEP_JULIA_VERSION="$version" \
+    --build-arg TGLFEP_JULIA_VARIANT="$variant" \
     -f "$scriptdir/Containerfile" "$scriptdir"
 
 echo "### Migrating $image to a squashed read-only image"

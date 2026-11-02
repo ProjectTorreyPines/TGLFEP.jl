@@ -21,10 +21,10 @@ module load cudatoolkit/12.9
 module load julia/1.11.7
 export JULIA_DEPOT_PATH="${PSCRATCH}/.julia${JULIA_DEPOT_PATH:+:${JULIA_DEPOT_PATH}}"
 export JULIA_CUDA_USE_COMPAT=false
-export TJLFEP_FILE_ONLY=1
+export TGLFEP_JULIA_FILE_ONLY=1
 
-TJLFEP_ROOT="${TJLFEP_ROOT:-/pscratch/sd/t/tneiser/.julia/dev/TJLFEP}"
-cd "${TJLFEP_ROOT}"
+TGLFEP_JULIA_ROOT="${TGLFEP_JULIA_ROOT:-/pscratch/sd/t/tneiser/.julia/dev/TJLFEP}"
+cd "${TGLFEP_JULIA_ROOT}"
 nvidia-smi -L 2>/dev/null | head -1 || true
 
 stdbuf -oL -eL julia --startup-file=no --project=. -t 8 dev/ad/validate_gpu_dual_grad.jl

@@ -1,24 +1,24 @@
 #!/bin/bash
-#SBATCH --job-name=tjlfep-container-cpu
+#SBATCH --job-name=tglfep_julia-container-cpu
 #SBATCH --account=m3739
 #SBATCH --constraint=cpu
 #SBATCH --qos=debug
 #SBATCH --time=0:25:00
 #SBATCH --nodes=1
 #SBATCH --cpus-per-task=16
-#SBATCH --output=tjlfep_container_cpu_%j.out
+#SBATCH --output=tglfep_julia_container_cpu_%j.out
 #
 # Smoke-test the migrated TJLFEP podman-hpc image inside a Slurm job on a
 # Perlmutter CPU node (AMD Milan, znver3 — one of the pkgimage clone targets).
 # Pull/build + migrate first (see README), then:
 #
-#   TJLFEP_ENVIRONMENT=v2.0.14 sbatch --export=ALL deploy/container/test_slurm_cpu.sbatch
+#   TGLFEP_JULIA_ENVIRONMENT=v2.0.14 sbatch --export=ALL deploy/container/test_slurm_cpu.sbatch
 #
-# TJLFEP_ENVIRONMENT expects the localhost/tjlfep:<tag> name that build.sh and the
+# TGLFEP_JULIA_ENVIRONMENT expects the localhost/tglfep_julia:<tag> name that build.sh and the
 # NERSC installer produce. A plain `podman-hpc pull ghcr.io/...` keeps the ghcr name
-# instead — pass it in full via TJLFEP_IMAGE:
+# instead — pass it in full via TGLFEP_JULIA_IMAGE:
 #
-#   TJLFEP_IMAGE=ghcr.io/projecttorreypines/tjlfep:v2.0.14 sbatch --export=ALL ...
+#   TGLFEP_JULIA_IMAGE=ghcr.io/projecttorreypines/tglfep_julia:v2.0.14 sbatch --export=ALL ...
 #
 # Either way the image must be MIGRATED (podman-hpc migrate <image>) under exactly that
 # name, or compute nodes won't see it and will try to pull from a bogus registry.
@@ -30,7 +30,7 @@
 
 set -euo pipefail
 
-image="${TJLFEP_IMAGE:-localhost/tjlfep:${TJLFEP_ENVIRONMENT:?set TJLFEP_ENVIRONMENT (e.g. v2.0.14) or a full TJLFEP_IMAGE}}"
+image="${TGLFEP_JULIA_IMAGE:-localhost/tglfep_julia:${TGLFEP_JULIA_ENVIRONMENT:?set TGLFEP_JULIA_ENVIRONMENT (e.g. v2.0.14) or a full TGLFEP_JULIA_IMAGE}}"
 
 podman=(podman-hpc)
 [[ -n "${SQUASH_DIR:-}" ]] && podman=(podman-hpc --squash-dir "$SQUASH_DIR")
@@ -40,7 +40,7 @@ lscpu | grep 'Model name'
 
 "${podman[@]}" run --rm --network none \
     -e JULIA_NUM_THREADS="$SLURM_CPUS_PER_TASK" \
-    "$image" tjlfep -e '
+    "$image" tglfep_julia -e '
         println("cpu: ", Sys.CPU_NAME, "  threads: ", Threads.nthreads())
         @time import TJLFEP
         import CUDA

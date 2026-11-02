@@ -13,7 +13,7 @@
 #SBATCH -t 03:00:00
 #SBATCH -C gpu
 #SBATCH -G 1
-#SBATCH -J tjlfep_nls_gpu
+#SBATCH -J tglfep_julia_nls_gpu
 #SBATCH -o dev/ad/nls_solvers_gpu_%j.out
 #SBATCH -e dev/ad/nls_solvers_gpu_%j.err
 #SBATCH --ntasks-per-node=1
@@ -27,8 +27,8 @@ module load julia/1.11.7
 export JULIA_DEPOT_PATH="${PSCRATCH}/.julia${JULIA_DEPOT_PATH:+:${JULIA_DEPOT_PATH}}"
 export JULIA_CUDA_USE_COMPAT=false
 
-TJLFEP_ROOT="${TJLFEP_ROOT:-/pscratch/sd/t/tneiser/.julia/dev/TJLFEP}"
-cd "${TJLFEP_ROOT}"
+TGLFEP_JULIA_ROOT="${TGLFEP_JULIA_ROOT:-/pscratch/sd/t/tneiser/.julia/dev/TJLFEP}"
+cd "${TGLFEP_JULIA_ROOT}"
 
 export USE_GPU=1
 export GKSwstype=nul                       # headless GR (Plots writes the PNG, no display)
@@ -41,7 +41,7 @@ echo "host: $(hostname)  date: $(date)  job=${SLURM_JOB_ID:-?}"
 echo "NB=${NB}  RADII=${RADII:-all}  SOLVERS=${SOLVERS}  NLS_LOCAL_ALGO=${NLS_LOCAL_ALGO:-LN_BOBYQA}"
 nvidia-smi -L 2>/dev/null | head -1 || true
 
-stdbuf -oL -eL julia --startup-file=no --project="${TJLFEP_ROOT}" \
+stdbuf -oL -eL julia --startup-file=no --project="${TGLFEP_JULIA_ROOT}" \
     -t 16 dev/ad/benchmark_nls_solvers.jl
 
 echo "=== NLS solvers head-to-head (GPU) done $(date) ==="

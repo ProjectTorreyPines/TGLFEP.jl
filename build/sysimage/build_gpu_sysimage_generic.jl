@@ -4,7 +4,7 @@
 # are baked, the image still loads fast (the FUSE cost is compilation, which the image removes).
 #
 # Builds against the registry-resolved "full" environment created by setup_registry_env.jl
-# (TJLFEP_BUILD_ENV): every package at its released FuseRegistry version, so any user can
+# (TGLFEP_JULIA_BUILD_ENV): every package at its released FuseRegistry version, so any user can
 # reproduce the image — no maintainer dev tree involved. FUSE and the weak-dep trio are
 # direct deps of that project, which is what lets create_sysimage bake them; listing
 # IMAS/GACODE/TurbulentTransport makes Julia load them during the build, baking the
@@ -12,8 +12,8 @@
 
 using Pkg
 
-build_env = get(ENV, "TJLFEP_BUILD_ENV", "")
-@assert !isempty(build_env) "TJLFEP_BUILD_ENV must point at the project made by setup_registry_env.jl (variant: full)"
+build_env = get(ENV, "TGLFEP_JULIA_BUILD_ENV", "")
+@assert !isempty(build_env) "TGLFEP_JULIA_BUILD_ENV must point at the project made by setup_registry_env.jl (variant: full)"
 
 Pkg.activate(build_env)
 Pkg.instantiate()
@@ -21,7 +21,7 @@ using PackageCompiler
 
 create_sysimage(
     [:TJLF, :TJLFEP, :FUSE, :IMAS, :GACODE, :TurbulentTransport];
-    sysimage_path = normpath(@__DIR__, "..", "TJLFEP_gpu_generic_sysimage.so"),
+    sysimage_path = normpath(@__DIR__, "..", "TGLFEP_JULIA_gpu_generic_sysimage.so"),
     precompile_execution_file = normpath(@__DIR__, "precompile_gpu_workload_generic.jl"),
     project = build_env,
     cpu_target = PackageCompiler.default_app_cpu_target(),

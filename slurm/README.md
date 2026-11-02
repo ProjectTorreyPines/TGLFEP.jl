@@ -6,17 +6,17 @@ CONFIG block at the top of the file, submit from the repo root.
 
 ```bash
 cd TJLFEP                                   # the job finds this checkout via SLURM_SUBMIT_DIR
-$EDITOR slurm/tjlfep_gpu_backfill.sbatch    # at least: "#SBATCH -A <your allocation>" and TGLFEP_FILE
-sbatch slurm/tjlfep_gpu_backfill.sbatch
+$EDITOR slurm/tglfep_julia_gpu_backfill.sbatch    # at least: "#SBATCH -A <your allocation>" and TGLFEP_FILE
+sbatch slurm/tglfep_julia_gpu_backfill.sbatch
 ```
 
 | Template | Nodes | Layout | Use for |
 |---|---|---|---|
-| `tjlfep_gpu_5N.sbatch` | 5 GPU | 20 tasks = 20 radii in one wave, 1 A100 + MPS team per radius | **high throughput** for uniform-cost solvers: `grid`, `ad :only` |
-| `tjlfep_gpu_backfill.sbatch` | 1 GPU | 4 tasks (one per A100) drain a shared radius queue | **low footprint**, and the right choice for the **extended-width solvers**: `ad :locate`, `ad :wide`, `robust_ad`, `truth` |
-| `tjlfep_cpu_10N.sbatch` | 10 CPU | 20 workers, one per radius | high throughput without a GPU allocation |
-| `tjlfep_cpu_1N.sbatch` | 1 CPU | 2 workers x 64 threads, pmap over radii | low footprint without a GPU allocation (slow: use `N_BASIS <= 16`) |
-| `tjlfep_merge.sbatch` | 1 CPU | re-merge an existing output dir | only if a GPU job's final merge step failed |
+| `tglfep_julia_gpu_5N.sbatch` | 5 GPU | 20 tasks = 20 radii in one wave, 1 A100 + MPS team per radius | **high throughput** for uniform-cost solvers: `grid`, `ad :only` |
+| `tglfep_julia_gpu_backfill.sbatch` | 1 GPU | 4 tasks (one per A100) drain a shared radius queue | **low footprint**, and the right choice for the **extended-width solvers**: `ad :locate`, `ad :wide`, `robust_ad`, `truth` |
+| `tglfep_julia_cpu_10N.sbatch` | 10 CPU | 20 workers, one per radius | high throughput without a GPU allocation |
+| `tglfep_julia_cpu_1N.sbatch` | 1 CPU | 2 workers x 64 threads, pmap over radii | low footprint without a GPU allocation (slow: use `N_BASIS <= 16`) |
+| `tglfep_julia_merge.sbatch` | 1 CPU | re-merge an existing output dir | only if a GPU job's final merge step failed |
 
 `SCAN_N=20` is the default in every example input. The 5N/10N templates run **one radius per
 task**, so `SCAN_N` in the `input.TGLFEP` must equal their `-n`/`--ntasks` (20); the job checks
@@ -61,7 +61,7 @@ locate, whose many independent narrow-width evaluations do amortize a team.
 
 Open the template. Everything a user changes is inside the `CONFIG` block; every entry is
 `VAR="${VAR:-default}"`, so you can also override at submit time
-(`SOLVER=ad AD_EXTEND_MODE=wide sbatch slurm/tjlfep_gpu_backfill.sbatch`).
+(`SOLVER=ad AD_EXTEND_MODE=wide sbatch slurm/tglfep_julia_gpu_backfill.sbatch`).
 
 1. **`#SBATCH -A`** — your NERSC allocation (`<project>_g` for GPU, `<project>` for CPU).
    `-q regular` is the default; `debug` (30 min, 1-4 nodes) is fine for an nb6 smoke test.
@@ -70,8 +70,8 @@ Open the template. Everything a user changes is inside the `CONFIG` block; every
    `FACTOR_IN`, `PROCESS_IN`, `KY_MODEL`, the `REJECT_*` flags. The examples ship
    `input_scan20_nb{6,8,16,32}.TGLFEP`; copy one and edit `N_BASIS`.
 3. **`SOLVER` / `AD_EXTEND_MODE`** — see the table above. Secondary knobs sit next to them
-   (`AD_WIDE_KDESC`, `AD_FAITHFUL_CONFIRM`, `REFINE_ROUNDS`, `TJLFEP_K_MAX`, `TJLFEP_NMODES`,
-   `TJLFEP_NXGRID`, `TJLFEP_PRINTOUT`), each with its allowed values in the comment.
+   (`AD_WIDE_KDESC`, `AD_FAITHFUL_CONFIRM`, `REFINE_ROUNDS`, `TGLFEP_JULIA_K_MAX`, `TGLFEP_JULIA_NMODES`,
+   `TGLFEP_JULIA_NXGRID`, `TGLFEP_JULIA_PRINTOUT`), each with its allowed values in the comment.
 4. **`SYSIMAGE`** — a prebuilt image (default: the shared m3739 image on CFS), or `""` for
    JIT from your checkout. See below.
 5. **`MPS_TEAM`** (GPU) — 8 fills an A100 for `grid`; at `N_BASIS=48` use `MPS_TEAM=4` and
@@ -94,15 +94,15 @@ Each run writes to `OUT_DIR` (default `runs/<template>_<jobid>_tasks/`, gitignor
 | `task_<i>.jls` | per-radius result (GPU templates), `i = 1..SCAN_N` |
 | `sfmin_scan.txt` | `i  IR  SFmin` per radius: the critical scale factor on the EP gradient |
 | `alpha_dndr_crit.input`, `alpha_dpdr_crit.input` | critical EP density / pressure gradient profiles (the files TGLF-EP hands to transport) |
-| `out.TGLFEP` | Fortran-style summary (CPU templates, and GPU with `TJLFEP_PRINTOUT=1`) |
-| `out.scalefactor_r###` | per-radius scan trace (`TJLFEP_PRINTOUT=1`) |
+| `out.TGLFEP` | Fortran-style summary (CPU templates, and GPU with `TGLFEP_JULIA_PRINTOUT=1`) |
+| `out.scalefactor_r###` | per-radius scan trace (`TGLFEP_JULIA_PRINTOUT=1`) |
 
-Slurm logs `tjlfep_<template>_<jobid>.{out,err}` land where you submitted (the repo root;
+Slurm logs `tglfep_julia_<template>_<jobid>.{out,err}` land where you submitted (the repo root;
 gitignored). The `.out` starts with a banner echoing the resolved project, sysimage, inputs
 and solver settings.
 
 **Re-merging.** The GPU templates merge the `task_*.jls` at the end of the job. If that step
-did not run, `OUT_DIR=runs/<run>_tasks sbatch slurm/tjlfep_merge.sbatch`, or on a login node:
+did not run, `OUT_DIR=runs/<run>_tasks sbatch slurm/tglfep_julia_merge.sbatch`, or on a login node:
 
 ```bash
 module load julia/1.11.7
@@ -121,8 +121,8 @@ A sysimage removes the JIT cost (~110 s per MPS team, paid once per radius on th
 once per GPU on backfill). The `SYSIMAGE` line decides:
 
 - **Prebuilt (default).** m3739 members get the shared images in
-  `/global/cfs/cdirs/m3739/TJLFEP/`: `TJLFEP_gpu_sysimage.so` (file-only, what the GPU
-  templates use), `TJLFEP_cpu_sysimage.so`, `TJLFEP_gpu_generic_sysimage.so` (FUSE/IMAS
+  `/global/cfs/cdirs/m3739/TJLFEP/`: `TGLFEP_JULIA_gpu_sysimage.so` (file-only, what the GPU
+  templates use), `TGLFEP_JULIA_cpu_sysimage.so`, `TGLFEP_JULIA_gpu_generic_sysimage.so` (FUSE/IMAS
   baked, for the `dd` path). The include pairs an image with the published project it was
   baked from (`env_lean`, or `env_full` for the generic image) and appends the shared CFS depot
   to `JULIA_DEPOT_PATH` so the baked JLL artifacts resolve. Do not run `Pkg` commands against
@@ -132,7 +132,7 @@ once per GPU on backfill). The `SYSIMAGE` line decides:
   are not in m3739. Instantiate once first:
   `julia --project=. -e 'using Pkg; Pkg.instantiate(); Pkg.precompile()'`.
 - **Your own bake.** `cd build && sbatch sysimage/batch_build_gpu_sysimage_fileonly.sh`, then
-  `SYSIMAGE=build/TJLFEP_gpu_sysimage.so` (see [`build/README.md`](../build/README.md)).
+  `SYSIMAGE=build/TGLFEP_JULIA_gpu_sysimage.so` (see [`build/README.md`](../build/README.md)).
 
 On the 5-node template `STAGE=1` (default) first `sbcast`s the image to node-local `/tmp` so
 80 workers do not all read 1.3 GB off Lustre at once.
@@ -145,10 +145,10 @@ Your depot is never replaced. Details and the artifact mechanism: [`docs/SYSIMAG
 
 | Symptom | Cause / fix |
 |---|---|
-| `TJLFEP_ROOT='...' is not a TJLFEP checkout` | Submitted from another directory. `cd` to the repo root before `sbatch`, or `export TJLFEP_ROOT=/path/to/TJLFEP`. |
+| `TGLFEP_JULIA_ROOT='...' is not a TJLFEP checkout` | Submitted from another directory. `cd` to the repo root before `sbatch`, or `export TGLFEP_JULIA_ROOT=/path/to/TJLFEP`. |
 | `SCAN_N ... must equal the number of Slurm tasks` | 5N/10N run one radius per task. Use an `input_scan20_*` file, or the backfill/1N template. |
 | `PROJECT=... has no Manifest.toml` | JIT from a fresh checkout: run the `Pkg.instantiate()` line above on a login node first. |
-| `Artifact "OpenSSL" was not found` | A sysimage without its depot: keep the default `TJLFEP_DEPOT`/`CFS_DIR`, do not clobber `JULIA_DEPOT_PATH` in your shell init. |
+| `Artifact "OpenSSL" was not found` | A sysimage without its depot: keep the default `TGLFEP_JULIA_DEPOT`/`CFS_DIR`, do not clobber `JULIA_DEPOT_PATH` in your shell init. |
 | `GPU run needs CUDA >= 12.6` | Wrong module; the include loads `cudatoolkit/12.9`, check nothing in your shell init overrides it. |
 | Workers hang in `using CUDA` | `JULIA_CUDA_USE_COMPAT` must be `false` for MPS clients; the include sets it, do not unset it. |
 | Node OOM at `N_BASIS=48` | `MPS_TEAM=4` and `#SBATCH -C gpu&hbm80g`. |
@@ -158,7 +158,7 @@ Your depot is never replaced. Details and the artifact mechanism: [`docs/SYSIMAG
 
 | File | Role |
 |---|---|
-| `tjlfep_env.inc.sh` | sourced by every template: modules, depot order, root resolution, sysimage/project pairing, input checks, env export, merge |
+| `tglfep_julia_env.inc.sh` | sourced by every template: modules, depot order, root resolution, sysimage/project pairing, input checks, env export, merge |
 | `run_gacode_scan20_mps_task.jl` | GPU driver: one radius per task (or the backfill queue), MPS worker team per GPU |
 | `mps-scan-wrapper.sh` | per-node MPS daemon start (daemon-first), GPU pinning, `SCAN_INDEX` |
 | `merge_gacode_scan20_array.jl` | merges `task_*.jls` into `sfmin_scan.txt` + `alpha_*_crit.input` |

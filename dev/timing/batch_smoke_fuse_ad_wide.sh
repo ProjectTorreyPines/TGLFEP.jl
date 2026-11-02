@@ -17,7 +17,7 @@ module load cudatoolkit/12.9
 module load julia/1.11.7
 export JULIA_DEPOT_PATH="${PSCRATCH}/.julia${JULIA_DEPOT_PATH:+:${JULIA_DEPOT_PATH}}"
 
-export TJLFEP_ROOT="${TJLFEP_ROOT:-${PSCRATCH}/.julia/dev/TJLFEP}"
+export TGLFEP_JULIA_ROOT="${TGLFEP_JULIA_ROOT:-${PSCRATCH}/.julia/dev/TJLFEP}"
 export FUSE_ROOT="${FUSE_ROOT:-${PSCRATCH}/.julia/dev/FUSE}"
 export USE_GPU=1
 export SOLVER=ad
@@ -30,10 +30,10 @@ export JULIA_CUDA_USE_COMPAT=false
 SYSFLAG=""
 echo "sysimage = <none, JIT from dev source (testing local edits)>"
 
-cd "${TJLFEP_ROOT}/dev/timing"
+cd "${TGLFEP_JULIA_ROOT}/dev/timing"
 nvidia-smi -L 2>/dev/null | head -2 || true
 
 stdbuf -oL -eL julia --startup-file=no ${SYSFLAG} --project="${FUSE_ROOT}" \
-    "${TJLFEP_ROOT}/dev/timing/smoke_fuse_ad_wide.jl"
+    "${TGLFEP_JULIA_ROOT}/dev/timing/smoke_fuse_ad_wide.jl"
 
 echo "=== smoke done (look for SMOKE_OK) ==="

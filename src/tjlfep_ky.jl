@@ -1,8 +1,8 @@
-# Opt-in latency probe (TJLFEP_PROBE=1). Per-process atomic accumulators: total time inside
+# Opt-in latency probe (TGLFEP_JULIA_PROBE=1). Per-process atomic accumulators: total time inside
 # TJLFEP_ky vs the TJLF.run (eigensolve) sub-call, so kwscale_scan can report the
 # eigensolve-vs-CPU split that bounds the MPS-team speedup (Amdahl).
 # NOTE: read at RUNTIME (not a precompiled const) so it honors the env at run time.
-_probe_on() = get(ENV, "TJLFEP_PROBE", "0") == "1"
+_probe_on() = get(ENV, "TGLFEP_JULIA_PROBE", "0") == "1"
 const _PROBE_RUN  = Threads.Atomic{Float64}(0.0)  # seconds in TJLF.run (eigensolve)
 const _PROBE_KY   = Threads.Atomic{Float64}(0.0)  # seconds in the whole TJLFEP_ky
 const _PROBE_N    = Threads.Atomic{Int}(0)
@@ -51,8 +51,8 @@ function TJLFEP_ky(inputsEP::Options{T}, inputsPR::profile{T}, str_wf_file::Stri
     # Gauss-Hermite grid (nx = 2*nxgrid-1) resolves the highest basis function.
     # With the old hardcoded 32, NBASIS=48 runs were under-resolved (63 nodes vs
     # basis products of polynomial order ~94) and lost unstable AE branches.
-    # Env override TJLFEP_NXGRID is a debug knob for quadrature-resolution studies.
-    inputTJLF.NXGRID = something(tryparse(Int, get(ENV, "TJLFEP_NXGRID", "")),
+    # Env override TGLFEP_JULIA_NXGRID is a debug knob for quadrature-resolution studies.
+    inputTJLF.NXGRID = something(tryparse(Int, get(ENV, "TGLFEP_JULIA_NXGRID", "")),
                                  max(inputsEP.N_BASIS, 32))
 
     inputTJLF.WIDTH = inputsEP.WIDTH_IN
@@ -212,7 +212,7 @@ function TJLFEP_ky(inputsEP::Options{T}, inputsPR::profile{T}, str_wf_file::Stri
     EP_conv_frac = fill(zero(T), inputTJLF.NMODES)
     theta_2_moment = fill(zero(T), inputTJLF.NMODES)
     # These per-mode diagnostic vectors are sized to NMODES (the keep-count), which is a
-    # user input (env TJLFEP_NMODES / nmodes kwarg, default 4) — no longer hard-coded to 4.
+    # user input (env TGLFEP_JULIA_NMODES / nmodes kwarg, default 4) — no longer hard-coded to 4.
     DEP = fill(T(NaN), inputTJLF.NMODES)
     ep_ql_flux = fill(T(NaN), inputTJLF.NMODES)
     chi_th = fill(T(NaN), inputTJLF.NMODES)

@@ -9,16 +9,16 @@
 # cannot autodetect a driver to size the runtime against).
 #
 # Driven entirely by environment variables set in the Containerfile:
-#   TJLFEP_INSTALL_DIR   install/depot location   (default /opt/tjlfep)
-#   TJLFEP_VARIANT       "lean" | "imas"          (default lean)
+#   TGLFEP_JULIA_INSTALL_DIR   install/depot location   (default /opt/tglfep_julia)
+#   TGLFEP_JULIA_VARIANT       "lean" | "imas"          (default lean)
 #   JULIA_CPU_TARGET     pkgimage CPU target      (required)
 
 @assert (Threads.nthreads() == 1) "Error: container install requires running Julia with one thread"
 @assert ("JULIA_CPU_TARGET" in keys(ENV)) "Error: Must define JULIA_CPU_TARGET environment variable"
 
-install_dir = get(ENV, "TJLFEP_INSTALL_DIR", "/opt/tjlfep")
-variant = get(ENV, "TJLFEP_VARIANT", "lean")
-@assert variant in ("lean", "imas") "Error: TJLFEP_VARIANT must be \"lean\" or \"imas\", got \"$variant\""
+install_dir = get(ENV, "TGLFEP_JULIA_INSTALL_DIR", "/opt/tglfep_julia")
+variant = get(ENV, "TGLFEP_JULIA_VARIANT", "lean")
+@assert variant in ("lean", "imas") "Error: TGLFEP_JULIA_VARIANT must be \"lean\" or \"imas\", got \"$variant\""
 
 import Pkg
 
@@ -96,14 +96,14 @@ println("### Resolve TJLFEP version to install")
 # TJLF v1.2.3 instead of v2.0.14 + v1.3.1). Pinning TJLFEP forces CUDA down to
 # the compatible 5.8.x instead.
 import TOML
-tjlfep_version = String(lstrip(get(ENV, "TJLFEP_BUILD_VERSION", ""), 'v'))
-if isempty(tjlfep_version)
+tglfep_julia_version = String(lstrip(get(ENV, "TGLFEP_JULIA_BUILD_VERSION", ""), 'v'))
+if isempty(tglfep_julia_version)
     # fall back to the highest version registered in the FuseRegistry clone
     vfile = joinpath(first(DEPOT_PATH), "registries", "FuseRegistry", "T", "TJLFEP", "Versions.toml")
-    @assert isfile(vfile) "TJLFEP_BUILD_VERSION unset and no registry Versions.toml at $vfile"
-    tjlfep_version = string(maximum(VersionNumber.(keys(TOML.parsefile(vfile)))))
+    @assert isfile(vfile) "TGLFEP_JULIA_BUILD_VERSION unset and no registry Versions.toml at $vfile"
+    tglfep_julia_version = string(maximum(VersionNumber.(keys(TOML.parsefile(vfile)))))
 end
-println("    TJLFEP $tjlfep_version")
+println("    TJLFEP $tglfep_julia_version")
 
 println()
 println("### Setup TJLFEP environment in ", install_dir)
@@ -113,7 +113,7 @@ Pkg.activate(install_dir)
 # scripts do `using TJLF, CUDA`). CUDA is pinned exactly: TJLFEP's caret compat
 # ("5.8.5" = <6) admits newer CUDA.jl, but 5.8.5 is the config every Perlmutter
 # GPU run and sysimage was validated against.
-packages = [Pkg.PackageSpec(name="TJLFEP", version=tjlfep_version),
+packages = [Pkg.PackageSpec(name="TJLFEP", version=tglfep_julia_version),
             Pkg.PackageSpec(name="TJLF"),
             Pkg.PackageSpec(name="CUDA", version="5.8.5"),
             Pkg.PackageSpec(name="PackageCompiler")]
@@ -195,7 +195,7 @@ println("    CUDA runtime artifact: ", crj.artifact_dir)
 
 import TJLFEP, TJLF, CUDA
 println("    TJLFEP $(pkgversion(TJLFEP)), TJLF $(pkgversion(TJLF)), CUDA $(pkgversion(CUDA)) load clean")
-@assert string(pkgversion(TJLFEP)) == tjlfep_version "resolver installed TJLFEP $(pkgversion(TJLFEP)), expected $tjlfep_version"
+@assert string(pkgversion(TJLFEP)) == tglfep_julia_version "resolver installed TJLFEP $(pkgversion(TJLFEP)), expected $tglfep_julia_version"
 # No GPU at build time: CUDA must degrade gracefully, not throw.
 @assert CUDA.functional() == false "unexpected: build host reports a functional GPU"
 if variant == "imas"

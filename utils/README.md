@@ -11,7 +11,7 @@ logic (`expro_util.f90`) on a radial scan, and isolates the derivative algorithm
 the dd-path preprocessing reproduces the `input.gacode` path.
 
 ```bash
-TJLFEP_FILE_ONLY=0 julia --startup-file=no --project=. utils/compare_imas_vs_expro_scan.jl
+TGLFEP_JULIA_FILE_ONLY=0 julia --startup-file=no --project=. utils/compare_imas_vs_expro_scan.jl
 # Optional env: CASE_DIR (default examples/DIIID_202017C42_500ms_v3.1), IS_EP, RHO_SCAN
 ```
 

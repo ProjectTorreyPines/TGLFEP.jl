@@ -14,18 +14,18 @@
 #
 # Env knobs:
 #   SCAN_N (20)  N_BASIS (32)  NGRID (201)  ALPHA_SOLVER (stiff)  JULIA_WORKER_THREADS (8)
-#   TJLFEP_GPU_SYSIMAGE  FUSE_ROOT  TJLFEP_ROOT
+#   TGLFEP_JULIA_GPU_SYSIMAGE  FUSE_ROOT  TGLFEP_JULIA_ROOT
 
 using Pkg
 
-const TJLFEP_ROOT = get(ENV, "TJLFEP_ROOT", normpath(@__DIR__, "..", ".."))
-const FUSE_ROOT = get(ENV, "FUSE_ROOT", normpath(TJLFEP_ROOT, "..", "FUSE"))
+const TGLFEP_JULIA_ROOT = get(ENV, "TGLFEP_JULIA_ROOT", normpath(@__DIR__, "..", ".."))
+const FUSE_ROOT = get(ENV, "FUSE_ROOT", normpath(TGLFEP_JULIA_ROOT, "..", "FUSE"))
 Pkg.activate(FUSE_ROOT)
 # Stack the TJLFEP environment so the master can `using SlurmClusterManager` (a TJLFEP dep,
 # not a FUSE dep) while FUSE stays the active/primary project. FUSE/IMAS/ALPHA resolve from
 # the active FUSE env; SlurmClusterManager falls through to TJLFEP. Non-invasive: no change
 # to FUSE's Project.toml.
-push!(LOAD_PATH, TJLFEP_ROOT)
+push!(LOAD_PATH, TGLFEP_JULIA_ROOT)
 
 function logmsg(args...)
     println(args...)
@@ -47,7 +47,7 @@ const WIDE_KDESC = parse(Int, get(ENV, "AD_WIDE_KDESC", "2"))
 const FAITHFUL_CONFIRM = get(ENV, "AD_FAITHFUL_CONFIRM", "1") != "0"
 const INNER = Symbol(get(ENV, "INNER", "threads"))
 const MPS_TEAM = parse(Int, get(ENV, "MPS_TEAM", "0"))
-const OUT_DIR = get(ENV, "TJLFEP_OUT_DIR", "")
+const OUT_DIR = get(ENV, "TGLFEP_JULIA_OUT_DIR", "")
 const NNODES = get(ENV, "SLURM_NNODES", "?")
 const NTASKS = get(ENV, "SLURM_NTASKS", "?")
 
@@ -69,15 +69,15 @@ const WORKER_THREADS = parse(Int, get(ENV, "JULIA_WORKER_THREADS", "8"))
 # like `#105#111`) to the workers. A baked sysimage built from an older TJLFEP source has a
 # DIFFERENT closure numbering -> the workers can't deserialize it (UndefVarError #NNN#NNN in
 # TJLFEP). JIT'ing TJLFEP from the same dev source on the workers keeps the closure types in
-# sync. Opt in only when the sysimage is known to match the current source: TJLFEP_GPU_SYSIMAGE=<path>.
-const GPU_SYSIMG = get(ENV, "TJLFEP_GPU_SYSIMAGE", "")
+# sync. Opt in only when the sysimage is known to match the current source: TGLFEP_JULIA_GPU_SYSIMAGE=<path>.
+const GPU_SYSIMG = get(ENV, "TGLFEP_JULIA_GPU_SYSIMAGE", "")
 sysflag = (!isempty(GPU_SYSIMG) && isfile(GPU_SYSIMG)) ? `--sysimage=$(GPU_SYSIMG)` : ``
 logmsg("worker sysimage = ", isempty(GPU_SYSIMG) ? "<none, JIT from dev source (closure-safe)>" : GPU_SYSIMG)
-exeflags = `--project=$(TJLFEP_ROOT) $(sysflag) -t $(WORKER_THREADS) --startup-file=no`
+exeflags = `--project=$(TGLFEP_JULIA_ROOT) $(sysflag) -t $(WORKER_THREADS) --startup-file=no`
 
 worker_env = Dict{String,String}()
 haskey(ENV, "JULIA_DEPOT_PATH") && (worker_env["JULIA_DEPOT_PATH"] = ENV["JULIA_DEPOT_PATH"])
-worker_env["JULIA_PROJECT"] = TJLFEP_ROOT
+worker_env["JULIA_PROJECT"] = TGLFEP_JULIA_ROOT
 worker_env["JULIA_PKG_PRECOMPILE_AUTO"] = "0"
 # REQUIRED on Perlmutter: CUDA.jl's forward-compat driver shim can hang in cuInit otherwise.
 worker_env["JULIA_CUDA_USE_COMPAT"] = "false"
@@ -178,7 +178,7 @@ if !isempty(OUT_DIR)
     mkpath(OUT_DIR)
     n_EP = (actor.alpha !== nothing) ? actor.alpha.n_EP : Float64[]
     p_EP = (actor.alpha !== nothing) ? actor.alpha.p_EP : Float64[]
-    Serialization.serialize(joinpath(OUT_DIR, "tjlfep_results.jls"),
+    Serialization.serialize(joinpath(OUT_DIR, "tglfep_julia_results.jls"),
         (; rho_scan=act.ActorTJLFEP.rho_scan, SFmin=actor.SFmin, width=actor.width,
             kymark=actor.kymark, n_EP=n_EP, p_EP=p_EP))
     try
@@ -186,7 +186,7 @@ if !isempty(OUT_DIR)
     catch err
         logmsg("note: imas2json(dd) failed ($(typeof(err))); skipping dd_out.json")
     end
-    logmsg("persisted results to $OUT_DIR (tjlfep_results.jls + dd_out.json)")
+    logmsg("persisted results to $OUT_DIR (tglfep_julia_results.jls + dd_out.json)")
 end
 
 total_s = time() - job_t0

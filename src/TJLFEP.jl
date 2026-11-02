@@ -4,7 +4,7 @@ module TJLFEP
 # only when IMAS, GACODE, and TurbulentTransport are all present in the environment (e.g.
 # under FUSE). Loaded standalone, TJLFEP provides only the file-based path
 # (`runTHD(::String,...)` / `runTHD_from_gacode`) and stays light (no IMAS/HDF5/FUSE).
-# This replaces the former `TJLFEP_FILE_ONLY` ENV flag, which was fragile because ENV is
+# This replaces the former `TGLFEP_JULIA_FILE_ONLY` ENV flag, which was fragile because ENV is
 # not part of Julia's precompile cache key.
 
 using Base.Threads
@@ -113,6 +113,21 @@ export runTHD_dd_radius
 
 export make_crit_grad_plots, read_crit_grad, write_crit_grad
 export TJLF
+
+# Environment knobs were renamed TJLFEP_* -> TGLFEP_JULIA_* (2026-11). Honor the old names for one
+# release: at load time copy any TJLFEP_<X> into TGLFEP_JULIA_<X> that is not set, with one warning.
+function _migrate_legacy_env!()
+    legacy = [k for k in keys(ENV) if startswith(k, "TJLFEP_")]
+    isempty(legacy) && return nothing
+    moved = String[]
+    for k in legacy
+        new = "TGLFEP_JULIA_" * k[length("TJLFEP_")+1:end]
+        haskey(ENV, new) || (ENV[new] = ENV[k]; push!(moved, k))
+    end
+    isempty(moved) || @warn "TJLFEP_* environment variables are deprecated; use TGLFEP_JULIA_* (copied for this session)" moved
+    return nothing
+end
+__init__() = _migrate_legacy_env!()
 
 # Collect the exported names for the auto-generated API reference (docs/make.jl).
 # Mirrors TJLF: list public symbols, skipping the module itself and the

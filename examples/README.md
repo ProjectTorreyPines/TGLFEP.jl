@@ -52,7 +52,7 @@ unmodified), `dump.gacode`, `dump.profile`, `Alpha_input`.
 Fortran references: `alpha_dndr_crit.input`, `alpha_dpdr_crit.input`, `batch_TGLF-EP.sl`
 (the 40-node `-n 5000` Fortran submit).
 
-Extended-width solvers on this case need the long wall noted in `slurm/tjlfep_gpu_backfill.sbatch`
+Extended-width solvers on this case need the long wall noted in `slurm/tglfep_julia_gpu_backfill.sbatch`
 (`:ad :locate` at nb32 ~4 h on one node).
 
 ## ITER/

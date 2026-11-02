@@ -7,9 +7,9 @@ node-count agnostic and written to `build/`; keep the `.so` on a non-purged path
 (CFS, not `$PSCRATCH`) for reuse across jobs. There are two GPU images, both baking
 the identical GPU solver paths (grid / `:ad` / `:robust_ad` / `:truth`):
 
-- **`TJLFEP_gpu_generic_sysimage.so`** (~3.0 GB) bakes the full FUSE-native stack
+- **`TGLFEP_JULIA_gpu_generic_sysimage.so`** (~3.0 GB) bakes the full FUSE-native stack
   (CUDA + TJLF + TJLFEP + FUSE/IMAS); use it for the FUSE `dd` path and `ActorTJLFEP`.
-- **`TJLFEP_gpu_sysimage.so`** (~1.1 GB) is the **file-only** image (CUDA + TJLF +
+- **`TGLFEP_JULIA_gpu_sysimage.so`** (~1.1 GB) is the **file-only** image (CUDA + TJLF +
   TJLFEP standalone, IMAS/FUSE *not* baked) — what a TGLF-EP user running the
   file-based scan (`runTHD` / `run_gacode_scan_task`) gets before going FUSE-native.
   It is leaner and faster to load: on an A100 node a worker process starts in
@@ -25,7 +25,7 @@ the identical GPU solver paths (grid / `:ad` / `:robust_ad` / `:truth`):
   (~29 min, same GPU precompile workload); the build self-checks that
   `TJLFEPIMASExt` stays dormant and FUSE is not baked.
 
-The CPU image is `TJLFEP_cpu_sysimage.so`.
+The CPU image is `TGLFEP_JULIA_cpu_sysimage.so`.
 
 ```bash
 sbatch sysimage/batch_build_gpu_sysimage_generic.sh    # -> build_gpu_sysimage_generic.jl  (+ precompile_gpu_workload_generic.jl)
@@ -33,8 +33,8 @@ sbatch sysimage/batch_build_gpu_sysimage_fileonly.sh   # -> build_gpu_sysimage_f
 sbatch sysimage/batch_build_cpu_sysimage.sh            # -> build_cpu_sysimage.jl          (+ precompile_cpu_workload.jl)
 ```
 
-Batch scripts auto-detect the image via `TJLFEP_GPU_SYSIMAGE` / `TJLFEP_SYSIMAGE`
-(falling back to JIT if missing). `slurm/common/tjlfep_env.inc.sh` is the shared
+Batch scripts auto-detect the image via `TGLFEP_JULIA_GPU_SYSIMAGE` / `TGLFEP_JULIA_SYSIMAGE`
+(falling back to JIT if missing). `slurm/common/tglfep_julia_env.inc.sh` is the shared
 helper that exports `JULIA_SYSIMAGE_ARGS`.
 
 ### Sharing a sysimage with other users (artifacts / `JULIA_DEPOT_PATH`)
@@ -64,7 +64,7 @@ everyone else no matter how they stack depots. The fix is baking *from
 m3739-readable paths*: a shared depot on CFS holding all package sources
 (registry-resolved — see below), plus the published build environments.
 
-- Images: `/global/cfs/cdirs/m3739/TJLFEP/TJLFEP_gpu_generic_sysimage.so`
+- Images: `/global/cfs/cdirs/m3739/TJLFEP/TGLFEP_JULIA_gpu_generic_sysimage.so`
   (+ file-only GPU / CPU), with `.sha` sidecars recording the resolved package
   versions each image was baked from
 - Published build environments (`Project.toml` + `Manifest.toml` +
@@ -95,11 +95,11 @@ export JULIA_CUDA_USE_COMPAT=false
 # project in both sysimage and JIT mode):
 julia --startup-file=no \
   --project=/global/cfs/cdirs/m3739/TJLFEP/env_full \
-  --sysimage=/global/cfs/cdirs/m3739/TJLFEP/TJLFEP_gpu_generic_sysimage.so \
+  --sysimage=/global/cfs/cdirs/m3739/TJLFEP/TGLFEP_JULIA_gpu_generic_sysimage.so \
   -e 'using TJLFEP, TurbulentTransport; println("OK")'
 ```
 
-or, from a TJLFEP checkout, `sbatch slurm/tjlfep_gpu_backfill.sbatch` with the nb6 input (see `slurm/README.md`).
+or, from a TJLFEP checkout, `sbatch slurm/tglfep_julia_gpu_backfill.sbatch` with the nb6 input (see `slurm/README.md`).
 
 > Keep your own writable depot **first** in `JULIA_DEPOT_PATH` (precompile caches,
 > logs, and scratchspaces are written to the first entry) and treat the CFS
@@ -108,10 +108,10 @@ or, from a TJLFEP checkout, `sbatch slurm/tjlfep_gpu_backfill.sbatch` with the n
 > manifest.
 
 **Refreshing the shared images.** From a TJLFEP checkout, submit the three build
-scripts (`cd build && sbatch sysimage/batch_build_*.sh`) with `TJLFEP_DEPOT`
+scripts (`cd build && sbatch sysimage/batch_build_*.sh`) with `TGLFEP_JULIA_DEPOT`
 pointing at the CFS depot; each job creates/refreshes its registry-resolved build
 env (`sysimage/setup_registry_env.jl`; pin a version with
-`TJLFEP_BUILD_VERSION`, default is the newest registered) and publishes the
+`TGLFEP_JULIA_BUILD_VERSION`, default is the newest registered) and publishes the
 `.so` + `.sha` + `env_*` project automatically. Never `rsync -a`/`cp -a` into
 the share — preserving the maintainer's primary group is what once made
 `depot/artifacts` unreadable to the group; the scripts run under `umask 007`

@@ -21,7 +21,7 @@ else
     nthreads = min(256, max(1, div(tot-2, SCAN_N))) # 256 = number inner iters per scan
 end
 
-sysimage_path = expanduser("~/.julia/dev/TJLFEP/build/TJLFEP_gpu_generic_sysimage.so")
+sysimage_path = expanduser("~/.julia/dev/TJLFEP/build/TGLFEP_JULIA_gpu_generic_sysimage.so")
 project_path = expanduser("../../")
 addprocs(SlurmManager(); exeflags=`--project=$project_path --sysimage=$sysimage_path --threads=$nthreads`)
 @everywhere println("worker $(myid()) on $(gethostname())")

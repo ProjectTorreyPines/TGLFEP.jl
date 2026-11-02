@@ -11,7 +11,7 @@
 #SBATCH -t 00:50:00
 #SBATCH -C gpu
 #SBATCH -G 4
-#SBATCH -J tjlfep_contour
+#SBATCH -J tglfep_julia_contour
 #SBATCH -o dev/ad/contour_%j.out
 #SBATCH -e dev/ad/contour_%j.err
 #SBATCH --ntasks-per-node=1
@@ -24,7 +24,7 @@ module load julia/1.11.7
 export JULIA_DEPOT_PATH="${PSCRATCH}/.julia${JULIA_DEPOT_PATH:+:${JULIA_DEPOT_PATH}}"
 export JULIA_CUDA_USE_COMPAT=false
 
-ROOT="${TJLFEP_ROOT:-/pscratch/sd/t/tneiser/.julia/dev/TJLFEP}"
+ROOT="${TGLFEP_JULIA_ROOT:-/pscratch/sd/t/tneiser/.julia/dev/TJLFEP}"
 cd "${ROOT}"
 JL=(julia --startup-file=no --project="${ROOT}" -t 32)
 
