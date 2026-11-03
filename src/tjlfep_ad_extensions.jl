@@ -1437,7 +1437,12 @@ function critical_factor_optimize(inputsEP::Options{Float64}, inputsPR::profile{
         verbose && @info "cfo width-extended" ky=win_ky w=win_w sfmin=win_f n_ext_confirm confirm=faithful_confirm
     end
 
-    sfmin_out = isfinite(win_f) ? win_f : f
+    # Report the running best as-is. With `faithful_confirm` a no-binding confirm leaves `win_f = Inf`
+    # (infeasible: no kept onset below FACTOR_IN) and that MUST reach the caller — substituting the
+    # cheap AE-band root `f` here re-introduced the grid-rejected onsets as sfmin (the `:locate`
+    # 20-radius ITER check echoed the `:only` roots, 2026-11-02). Without the confirm `win_f` already
+    # equals `f` (or the lowest extended onset), so file-based `:only`/`:wide` results are unchanged.
+    sfmin_out = win_f
     return (; sfmin = sfmin_out, kyhat = win_ky, width = win_w, f_seedmin, ky_seed, w_seed,
             iters = iters, evals = evals[], converged = win_converged, faithful = win_faithful,
             extended = extend_width, n_ext_confirm = n_ext_confirm)

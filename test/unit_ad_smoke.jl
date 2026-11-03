@@ -183,11 +183,18 @@ using TJLFEP
             # never the cheap AE-band root
             rc = critical_factor_optimize(ep, prof; gamma_thresh=gth, scan_lo=slo, faithful_confirm=true,
                                           extend_width=false, inner=:threads)
-            if rc.faithful !== nothing && rc.faithful.binding == :none
-                @test !isfinite(rc.sfmin)
-            elseif rc.faithful !== nothing
-                @test rc.sfmin == rc.faithful.factor_faithful
-            end
+            hit = rc.faithful !== nothing && rc.faithful.binding != :none && isfinite(rc.faithful.factor_faithful)
+            @test rc.sfmin == (hit ? rc.faithful.factor_faithful : Inf)
+            # Force the no-keep branch: THETA_SQ_THRESH < 0 rejects every mode (theta_2_moment ≥ 0) while
+            # the cheap AE-band root (no keep filters) stays finite. The confirm must then report
+            # binding == :none and sfmin == Inf — never the cheap root `r.sfmin`.
+            ep2 = deepcopy(ep); ep2.THETA_SQ_THRESH = -1.0
+            rn = critical_factor_optimize(ep2, prof; gamma_thresh=gth, scan_lo=slo, faithful_confirm=true,
+                                          extend_width=false, inner=:threads)
+            @test rn.faithful !== nothing
+            @test rn.faithful.binding == :none
+            @test !isfinite(rn.sfmin)
+            @test rn.sfmin != r.sfmin
         else
             @test isnan(r.kyhat)
         end
