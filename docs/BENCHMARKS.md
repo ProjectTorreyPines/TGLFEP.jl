@@ -97,12 +97,12 @@ basis dynamically, so the Julia solvers run any `N_BASIS` unmodified.
 | 8  | 26.2   | 113.3   | 113.0 | 0.23× |
 | 16 | 111.5  | 650.4   | 158.0 | 0.71× |
 | 32 | 886.9  | 4893.2  | 353.0 | **2.51×** |
-| 48 | 2933.5 | (pending) | 821.0 | **3.57×** |
+| 48 | 2933.5 | 19255.8 | 821.0 | **3.57×** |
 
 (Wallclock here compares a **5-node** GPU run to a **10-node** `-n 1280` Fortran run
 — *half* the nodes — so it understates the GPU, yet it still wins 2.5× at
 `N_BASIS=32` and 3.6× at 48; the fair node-count-normalized margins are ~5.0× and
-~7.1×. Julia `:grid` on CPU, on the same 10 nodes as Fortran, is a steady ~4–6×
+~7.1×. Julia `:grid` on CPU, on the same 10 nodes as Fortran, is ~4–7×
 *slower* at every `N_BASIS`, so the GPU is doing the heavy lifting. The 48
 Fortran time uses the `nb=48` rebuild described above.)
 
