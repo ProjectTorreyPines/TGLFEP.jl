@@ -2,8 +2,9 @@
 
 Moved here from the top-level README. Reproduction scripts live in `dev/timing/`.
 
-Timing/accuracy on the **reactor-relevant `UCP_complete`** case (4 thermal ion
-species + energetic particles), a 20-radius scan on Perlmutter with sysimages.
+Timing/accuracy on the **reactor-relevant `UCP_complete`** case (the pulsed compact-reactor use case UCR-P
+of Holland et al., *J. Plasma Phys.* **89**, 905890418 (2023): 8 T, R = 4 m, 16 MA; run with D, T, He ash
+and fusion alphas, i.e. 3 thermal ions + energetic particles), a 20-radius scan on Perlmutter with sysimages.
 This is the headline benchmark because the GPU eigensolver's payoff scales with
 the eigenmatrix size (species × `N_BASIS`): UCP's per-`ky` eigenmatrix is `2400²`
 (complex) at `N_BASIS=32` vs `1440²` for DIII-D, so each eigensolve is several×
