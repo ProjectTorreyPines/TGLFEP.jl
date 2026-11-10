@@ -51,7 +51,7 @@ different branch (7.3 vs 2.6). `:ad :locate` (green) drops below `grid` into the
 single seed pass lands 1.5–1.8× above `:locate` (and above `grid`). Colors and legend order
 match the node-hours plot below for quick cross-reference.
 
-![Node-hours vs N_BASIS](https://raw.githubusercontent.com/ProjectTorreyPines/TGLFEP.jl/master/docs/plots/scan20_timing_wide_lines.png?v=9)
+![Node-hours vs N_BASIS](https://raw.githubusercontent.com/ProjectTorreyPines/TGLFEP.jl/master/docs/plots/scan20_timing_wide_lines.png?v=10)
 
 Absolute node-hours at `N_BASIS=32`, each solver on its fastest layout (Fortran
 `-n 1280` on 10 CPU nodes; `grid`/`:ad :only` on 5 MPS GPU nodes; `:ad

@@ -29,7 +29,7 @@ plots = [
     ("julia_gpu_ad_wide",   "Julia :ad :wide (GPU)",       :firebrick, :solid, :star5),
 ]
 
-default(legendfontsize=9, guidefontsize=11, tickfontsize=9, dpi=200, fontfamily="Computer Modern")
+default(legendfontsize=12, guidefontsize=15, tickfontsize=12, titlefontsize=15, dpi=200, fontfamily="Computer Modern")
 p = plot(xlabel="N_BASIS", ylabel="node-hours (nodes x wallclock)",
          title="UCP_complete SCAN_N=20 cost vs N_BASIS", xscale=:log2, yscale=:log10,
          legend=:topleft, size=(950, 560), left_margin=4mm, bottom_margin=4mm, xticks=(nb, string.(nb)))

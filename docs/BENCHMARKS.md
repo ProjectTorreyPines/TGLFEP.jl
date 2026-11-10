@@ -51,7 +51,7 @@ elsewhere). `:ad :wide` stays within ~1–1.8× of `:ad :locate` and never below
 single pass misses the located optimum at IR 117, 3.9×, and lands above `grid` at IR 22).
 Colors and legend order match the node-hours plot below for quick cross-reference.
 
-![UCP node-hours vs N_BASIS](https://raw.githubusercontent.com/ProjectTorreyPines/TGLFEP.jl/master/docs/plots/ucp_scan20_timing_nodehours.png?v=4)
+![UCP node-hours vs N_BASIS](https://raw.githubusercontent.com/ProjectTorreyPines/TGLFEP.jl/master/docs/plots/ucp_scan20_timing_nodehours.png?v=5)
 
 Absolute node-hours at `N_BASIS=32`, each solver on its fastest layout (Fortran
 `-n 1280` on 10 CPU nodes; `grid`/`:ad :only` on 5 MPS GPU nodes; `:ad

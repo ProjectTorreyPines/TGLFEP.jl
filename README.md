@@ -141,7 +141,7 @@ Fortran, ≈ 2.81 (re-measured 2026-11). The GPU margin grows with `N_BASIS` (Fo
 8, break-even near 16, ~7–9× at 48), and stock Fortran TGLF cannot run
 `N_BASIS>32` without a rebuild.
 
-![UCP node-hours vs N_BASIS](https://raw.githubusercontent.com/ProjectTorreyPines/TGLFEP.jl/master/docs/plots/ucp_scan20_timing_nodehours.png?v=4)
+![UCP node-hours vs N_BASIS](https://raw.githubusercontent.com/ProjectTorreyPines/TGLFEP.jl/master/docs/plots/ucp_scan20_timing_nodehours.png?v=5)
 
 Tables, more plots, accuracy comparison and the DIII-D case:
 [`docs/BENCHMARKS.md`](docs/BENCHMARKS.md), [`docs/README_DIII-D_example.md`](docs/README_DIII-D_example.md);

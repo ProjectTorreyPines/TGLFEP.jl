@@ -38,7 +38,7 @@ locate = getcol("julia_gpu_ad_locate_nh")  # :ad :locate, 1-node backfill (WIDTH
 wide   = getcol("julia_gpu_ad_wide_nh")    # :ad :wide, 1-node backfill (WIDTH_FLOOR = 0.5)
 cpu    = getcol("julia_cpu_nh")            # :grid on CPU, same 10 nodes as Fortran
 
-default(legendfontsize=9, guidefontsize=11, tickfontsize=9, dpi=200, fontfamily="Computer Modern")
+default(legendfontsize=12, guidefontsize=15, tickfontsize=12, titlefontsize=15, dpi=200, fontfamily="Computer Modern")
 # Plot only the 2x2 solver-selection options (+ Fortran baseline): the reference tiers
 # robust_ad/truth are omitted here because :ad :locate matches their accuracy at lower cost.
 ys = filter(!isnan, vcat(fort, grid, locate, wide, only, cpu))
