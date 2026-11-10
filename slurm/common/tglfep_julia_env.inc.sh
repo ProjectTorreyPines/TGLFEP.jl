@@ -248,7 +248,7 @@ tglfep_julia_merge() {
 #     tglfep_julia_finish "<closing line>" <step>=<exit code> [<step>=<exit code> ...]
 # All zero -> print the closing line. Otherwise say which step failed (in .out and .err) and
 # exit with the first non-zero code, so Slurm records the job as FAILED and `afterok`
-# dependents do not start. Without this a template ends on an echo and always exits 0.
+# dependents do not start.
 tglfep_julia_finish() {
     local closing="$1" step code rc=0 failed=""
     shift

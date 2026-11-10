@@ -151,7 +151,7 @@ physics-parity notes in [`docs/FORTRAN_JULIA_COMPARISON.md`](docs/FORTRAN_JULIA_
 Node-hours at `N_BASIS=32` on `UCP_complete` (20 radii, measured 2026-10 on v2.0.18 with the
 `WIDTH_FLOOR = 0.5` default): Fortran `-n 1280` ≈ 2.46; `:ad :only` ≈ 0.28, `:ad :wide` ≈ 0.39,
 `:grid` ≈ 0.49, `:ad :locate` ≈ 1.16; `:grid` without a GPU, on the same 10 CPU nodes as
-Fortran, ≈ 2.81 (re-measured 2026-11). The GPU margin grows with `N_BASIS` (Fortran is cheaper at
+Fortran, ≈ 2.81. The GPU margin grows with `N_BASIS` (Fortran is cheaper at
 8, break-even near 16, ~7–9× at 48), and stock Fortran TGLF cannot run
 `N_BASIS>32` without a rebuild.
 

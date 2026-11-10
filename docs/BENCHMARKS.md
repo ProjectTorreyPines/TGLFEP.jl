@@ -128,9 +128,8 @@ is the *same* `ad` solver run two ways: on an **MPS team** instead of threads it
 so team-spawn/remote-call overhead never amortizes. **Rule of thumb: `grid` → MPS,
 `ad` → threads.**
 
-Data: `docs/plots/ucp_scan20_timing.csv` (2026-10 campaign; the Julia CPU column was re-measured
-2026-11-10 with `slurm/tglfep_julia_cpu_10N.sbatch`, after the CPU path began reusing its solver
-buffers and pinning one thread per physical core). Reproduce with
+Data: `docs/plots/ucp_scan20_timing.csv` (2026-10 campaign; the Julia CPU column is from
+2026-11-10 with `slurm/tglfep_julia_cpu_10N.sbatch`). Reproduce with
 `dev/timing/submit_ucp_scan20.sh` (Fortran `-n 1280` + all GPU tiers). The
 smaller DIII-D verification case (bit-for-bit Fortran match) is in
 [`docs/README_DIII-D_example.md`](docs/README_DIII-D_example.md).
