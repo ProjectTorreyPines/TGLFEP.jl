@@ -5,9 +5,10 @@
 #   The master spawns 2 Julia workers (SlurmClusterManager, 64 threads each) and pmaps the
 #   radii over them; pmap hands a worker the next radius as soon as it is free, so any
 #   SCAN_N works and straggler radii do not idle the node. Smallest possible footprint,
-#   easy to backfill in the queue, but SLOW: roughly 10x the 10-node wall. Measured
-#   10-node grid wall x10 (DIII-D case): nb6 ~20 min, nb8 ~30 min, nb16 ~2 h, nb32 ~15 h.
-#   Use N_BASIS <= 16 here, or SOLVER=ad; use the GPU templates for production.
+#   easy to backfill in the queue, but roughly 10x the 10-node wall. Estimated from the
+#   measured 10-node grid wall x10 (not timed on one node): DIII-D case nb6/nb8 ~3 min,
+#   nb16 ~6 min, nb32 ~35 min; reactor case (UCP_complete) nb32 ~2.8 h, nb48 ~9 h.
+#   Use the GPU templates for production.
 #
 # Usage (from the repo root, so the job can find this checkout):
 #   cd TJLFEP

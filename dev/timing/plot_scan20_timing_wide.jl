@@ -6,6 +6,7 @@
 #   * Julia :ad :only   (julia_gpu_ad_only_nh)   -- approximates :grid (bare w>=1 AD)
 #   * Julia :ad :locate (julia_gpu_ad_locate_nh) -- extends Fortran with the 0.5 <= w < 1 AE modes (default)
 #   * Julia :ad :wide   (julia_gpu_ad_wide_nh)   -- fast single-pass approximation of :locate
+#   * Julia :grid on CPU (julia_cpu_nh)          -- the :grid solver without a GPU, same 10 nodes as Fortran
 # All series come from timing_runs/scan20_timing.csv (copied to docs/plots/scan20_timing.csv), one column per
 # series as in the UCP CSV; the extended-width rows use the WIDTH_FLOOR = 0.5 default (2026-10).
 # The robust_ad/truth reference tiers are intentionally omitted: :ad :locate matches their
@@ -35,17 +36,19 @@ grid   = getcol("julia_gpu_nh")            # :grid, 5-node MPS team
 only   = getcol("julia_gpu_ad_only_nh")    # :ad :only, 5-node threads
 locate = getcol("julia_gpu_ad_locate_nh")  # :ad :locate, 1-node backfill (WIDTH_FLOOR = 0.5)
 wide   = getcol("julia_gpu_ad_wide_nh")    # :ad :wide, 1-node backfill (WIDTH_FLOOR = 0.5)
+cpu    = getcol("julia_cpu_nh")            # :grid on CPU, same 10 nodes as Fortran
 
 default(legendfontsize=9, guidefontsize=11, tickfontsize=9, dpi=200, fontfamily="Computer Modern")
 # Plot only the 2x2 solver-selection options (+ Fortran baseline): the reference tiers
 # robust_ad/truth are omitted here because :ad :locate matches their accuracy at lower cost.
-ys = filter(!isnan, vcat(fort, grid, locate, wide, only))
+ys = filter(!isnan, vcat(fort, grid, locate, wide, only, cpu))
 ymax = (isempty(ys) ? 1.0 : maximum(ys)) * 1.12
 p = plot(xlabel="N_BASIS", ylabel="Node-hours (nodes × wallclock)",
          title="SCAN_N=20 node-hours vs N_BASIS: DIII-D",
          xticks=basis, legend=:topleft, ylim=(0, ymax), size=(900, 560),
          left_margin=4mm, bottom_margin=4mm)
 plot!(p, basis, fort;   label="Fortran (CPU)",          marker=:circle,   linewidth=2, markersize=6, color=:steelblue)
+any(!isnan, cpu) && plot!(p, basis, cpu; label="Julia :grid (CPU)", marker=:hexagon, linewidth=2, markersize=6, color=:purple, linestyle=:dashdot)
 plot!(p, basis, grid;   label="Julia :grid (GPU)",      marker=:diamond,  linewidth=2, markersize=6, color=:gray55, linestyle=:dash)
 any(!isnan, only) && plot!(p, basis, only; label="Julia :ad :only (GPU)", marker=:rect, linewidth=2, markersize=5, color=:darkorange, linestyle=:dot)
 plot!(p, basis, locate; label="Julia :ad :locate (GPU)",marker=:utriangle,linewidth=2, markersize=6, color=:seagreen,   linestyle=:solid)

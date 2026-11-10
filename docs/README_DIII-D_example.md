@@ -51,7 +51,7 @@ different branch (7.3 vs 2.6). `:ad :locate` (green) drops below `grid` into the
 single seed pass lands 1.5–1.8× above `:locate` (and above `grid`). Colors and legend order
 match the node-hours plot below for quick cross-reference.
 
-![Node-hours vs N_BASIS](https://raw.githubusercontent.com/ProjectTorreyPines/TGLFEP.jl/master/docs/plots/scan20_timing_wide_lines.png?v=8)
+![Node-hours vs N_BASIS](https://raw.githubusercontent.com/ProjectTorreyPines/TGLFEP.jl/master/docs/plots/scan20_timing_wide_lines.png?v=9)
 
 Absolute node-hours at `N_BASIS=32`, each solver on its fastest layout (Fortran
 `-n 1280` on 10 CPU nodes; `grid`/`:ad :only` on 5 MPS GPU nodes; `:ad
@@ -61,7 +61,9 @@ queue): Fortran ≈0.51; `grid` ≈0.26, `:ad :only` ≈0.13, `:ad :wide` ≈0.1
 Fortran (~2.0×/~3.8×/~3.0×), and `:ad :locate` sits above it (~1.2× the Fortran cost) —
 the price of the `0.5 ≤ w < 1` accuracy. `:ad :wide` is ~3.6× cheaper than `:locate` at
 `N_BASIS=32` (2.2–2.9× at 6–16; the gap widens with `N_BASIS`, where the faithful confirm
-costs more). The per-backend tables below give the raw wallclock seconds.
+costs more). Julia `:grid` on CPU, on the same 10 nodes as Fortran, is ≈0.63 node-hours at
+`N_BASIS=32`, 1.24× the Fortran cost (1.5–1.9× at 6–16, where ~17 s of worker start-up weighs
+more). The per-backend tables below give the raw wallclock seconds.
 
 **Best-throughput layout depends on the solver** (for these `SCAN_N=20` runs):
 - **`:grid` and `:ad :only` → 5 GPU nodes.** Per-radius cost is uniform, so
@@ -78,10 +80,10 @@ costs more). The per-backend tables below give the raw wallclock seconds.
 
 | N_BASIS | Fortran CPU (s) | Julia CPU (s) | Julia GPU MPS (s) | GPU speedup vs Fortran (wallclock) |
 |--------:|----------------:|--------------:|------------------:|-----------------------------------:|
-| 6  | 17.1  | 141.3   | 100.0 | 0.17× |
-| 8  | 19.7  | 148.4   | 106.0 | 0.19× |
-| 16 | 33.5  | 250.0   | 119.0 | 0.28× |
-| 32 | 182.3 | 902.3   | 186.0 | 0.98× |
+| 6  | 17.1  | 32.2    | 100.0 | 0.17× |
+| 8  | 19.7  | 33.5    | 106.0 | 0.19× |
+| 16 | 33.5  | 50.8    | 119.0 | 0.28× |
+| 32 | 182.3 | 226.3   | 186.0 | 0.98× |
 
 (Wallclock here compares a **5-node** GPU run to a **10-node** `-n 1280` Fortran
 run — twice the nodes — so raw wallclock favors Fortran. The fair,
@@ -112,8 +114,10 @@ profile at `N_BASIS=32`) is documented in
 [`docs/AD_SOLVERS_AND_SEARCH_BOUNDS.md`](https://github.com/ProjectTorreyPines/TGLFEP.jl/blob/master/docs/AD_SOLVERS_AND_SEARCH_BOUNDS.md).
 
 Data: `docs/plots/scan20_timing.csv` (GPU tiers measured 2026-10-31/11-01 on v2.0.18 with
-`WIDTH_FLOOR = 0.5`; the Fortran and Julia-CPU rows for `N_BASIS ≤ 16` are the 2026-07
-measurement, which the width floor does not touch, and their `N_BASIS = 32` rows are from
-2026-10-24). Reproduce: grid sweep with
+`WIDTH_FLOOR = 0.5`; the Fortran rows for `N_BASIS ≤ 16` are the 2026-07
+measurement, which the width floor does not touch, and its `N_BASIS = 32` row is from
+2026-10-24; the Julia-CPU column was re-measured 2026-11-10 with
+`slurm/tglfep_julia_cpu_10N.sbatch`, after the CPU path began reusing its solver buffers and
+pinning one thread per physical core). Reproduce: grid sweep with
 `dev/timing/submit_timing_vs_nbasis.sh`, AD sweep with
 `dev/timing/submit_timing_vs_nbasis_ad.sh` (capability 4).

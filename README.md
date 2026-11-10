@@ -49,7 +49,7 @@ sbatch slurm/tglfep_julia_gpu_backfill.sbatch
 | `slurm/tglfep_julia_gpu_5N.sbatch` | 5 GPU nodes, 20 radii in one wave | high throughput: `grid`, `ad :only` |
 | `slurm/tglfep_julia_gpu_backfill.sbatch` | 1 GPU node, 4 GPUs drain a radius queue | low footprint, and the extended-width solvers `ad :locate`/`:wide`, `robust_ad`, `truth` |
 | `slurm/tglfep_julia_cpu_10N.sbatch` | 10 CPU nodes, one worker per radius | no GPU allocation |
-| `slurm/tglfep_julia_cpu_1N.sbatch` | 1 CPU node, 2 workers | smallest footprint (slow) |
+| `slurm/tglfep_julia_cpu_1N.sbatch` | 1 CPU node, 2 workers | smallest footprint (about 10x the 10-node wall) |
 
 Every solver option is a labelled line in the template; the physics (`SCAN_N`, `N_BASIS`,
 `WIDTH_MIN/MAX`, `FACTOR_IN`, ...) stays in the `input.TGLFEP` file, exactly as for the
@@ -136,7 +136,8 @@ physics-parity notes in [`docs/FORTRAN_JULIA_COMPARISON.md`](docs/FORTRAN_JULIA_
 
 Node-hours at `N_BASIS=32` on `UCP_complete` (20 radii, measured 2026-10 on v2.0.18 with the
 `WIDTH_FLOOR = 0.5` default): Fortran `-n 1280` ≈ 2.46; `:ad :only` ≈ 0.28, `:ad :wide` ≈ 0.39,
-`:grid` ≈ 0.49, `:ad :locate` ≈ 1.16. The GPU margin grows with `N_BASIS` (Fortran is cheaper at
+`:grid` ≈ 0.49, `:ad :locate` ≈ 1.16; `:grid` without a GPU, on the same 10 CPU nodes as
+Fortran, ≈ 2.81 (re-measured 2026-11). The GPU margin grows with `N_BASIS` (Fortran is cheaper at
 8, break-even near 16, ~7–9× at 48), and stock Fortran TGLF cannot run
 `N_BASIS>32` without a rebuild. Tables, plots, accuracy comparison and the DIII-D case:
 [`docs/BENCHMARKS.md`](docs/BENCHMARKS.md), [`docs/README_DIII-D_example.md`](docs/README_DIII-D_example.md);

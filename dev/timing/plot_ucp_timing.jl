@@ -22,14 +22,14 @@ getcol(name) = [ (i = col(name); (i === nothing || isempty(r[i])) ? NaN : parse(
 # (csv label, legend, color, linestyle, marker)
 plots = [
     ("fortran",             "Fortran (CPU -n 1280)",       :steelblue, :solid, :circle),
+    ("julia_cpu",           "Julia :grid (CPU)",           :purple,    :dashdot, :hexagon),
     ("julia_gpu",           "Julia :grid (GPU)",           :gray55,    :dash,  :diamond),
     ("julia_gpu_ad_only",   "Julia :ad :only (GPU)",       :darkorange,:dot,   :rect),
     ("julia_gpu_ad_locate", "Julia :ad :locate (GPU)",     :seagreen,  :solid, :utriangle),
     ("julia_gpu_ad_wide",   "Julia :ad :wide (GPU)",       :firebrick, :solid, :star5),
-    ("julia_cpu",           "Julia :grid (CPU)",           :purple,    :dashdot, :hexagon),
 ]
 
-default(legendfontsize=9, guidefontsize=11, tickfontsize=9, dpi=200)
+default(legendfontsize=9, guidefontsize=11, tickfontsize=9, dpi=200, fontfamily="Computer Modern")
 p = plot(xlabel="N_BASIS", ylabel="node-hours (nodes x wallclock)",
          title="UCP_complete SCAN_N=20 cost vs N_BASIS", xscale=:log2, yscale=:log10,
          legend=:topleft, size=(950, 560), left_margin=4mm, bottom_margin=4mm, xticks=(nb, string.(nb)))

@@ -4,16 +4,17 @@
 #
 #   The master spawns 20 Julia workers (SlurmClusterManager, 2 per node x 64 threads) and
 #   pmaps the radii over them; the master writes the merged SFmin profile itself. No GPU
-#   allocation needed. The CPU grid path is ~6x slower than the Fortran reference at nb32
-#   and ~25x slower than the GPU path (node-hours), so use the GPU templates when you can.
+#   allocation needed. The CPU grid path costs 1.1-1.25x the Fortran reference at nb32 and
+#   2.5-6x the node-hours of the GPU path, so use the GPU templates when you can.
 #
 # Usage (from the repo root, so the job can find this checkout):
 #   cd TJLFEP
 #   edit the CONFIG block below (at least: #SBATCH -A, TGLFEP_FILE)
 #   sbatch slurm/tglfep_julia_cpu_10N.sbatch
 #
-# SCAN_N in the input.TGLFEP MUST equal --ntasks below (20). Measured 10-node grid wall
-# (DIII-D case): nb6 2 min, nb16 12 min, nb32 87 min, nb48 5.7 h -> set -t accordingly.
+# SCAN_N in the input.TGLFEP MUST equal --ntasks below (20). Measured 10-node grid wall:
+# DIII-D case nb6/nb8 0.6 min, nb16 0.9 min, nb32 3.8 min; reactor case (UCP_complete) nb8 0.7 min,
+# nb16 2.4 min, nb32 17 min, nb48 54 min -> set -t accordingly.
 # =============================================================================
 #SBATCH -A m3739                   # EDIT: your NERSC CPU allocation (no _g suffix)
 #SBATCH -q regular

@@ -15,7 +15,7 @@ sbatch slurm/tglfep_julia_gpu_backfill.sbatch
 | `tglfep_julia_gpu_5N.sbatch` | 5 GPU | 20 tasks = 20 radii in one wave, 1 A100 + MPS team per radius | **high throughput** for uniform-cost solvers: `grid`, `ad :only` |
 | `tglfep_julia_gpu_backfill.sbatch` | 1 GPU | 4 tasks (one per A100) drain a shared radius queue | **low footprint**, and the right choice for the **extended-width solvers**: `ad :locate`, `ad :wide`, `robust_ad`, `truth` |
 | `tglfep_julia_cpu_10N.sbatch` | 10 CPU | 20 workers, one per radius | high throughput without a GPU allocation |
-| `tglfep_julia_cpu_1N.sbatch` | 1 CPU | 2 workers x 64 threads, pmap over radii | low footprint without a GPU allocation (slow: use `N_BASIS <= 16`) |
+| `tglfep_julia_cpu_1N.sbatch` | 1 CPU | 2 workers x 64 threads, pmap over radii | low footprint without a GPU allocation (about 10x the 10-node wall) |
 | `tglfep_julia_merge.sbatch` | 1 CPU | re-merge an existing output dir | only if a GPU job's final merge step failed |
 
 `SCAN_N=20` is the default in every example input. The 5N/10N templates run **one radius per
@@ -35,7 +35,7 @@ nodes = 2.46 node-hours, measured 2026-10 on v2.0.18 with the `WIDTH_FLOOR = 0.5
 | `ad` + `AD_EXTEND_MODE=locate` **(default)** | extended | gpu_backfill | `mps_team` | 1.16 | Adds the narrower-width (`0.5 <= w < 1`, never below the physics floor `WIDTH_FLOOR = 0.5`) EP-driven Alfven modes Fortran misses; the faithful extended-width value. Production / `ActorTJLFEP` default. |
 | `ad` + `AD_EXTEND_MODE=wide` | extended | gpu_backfill | `mps_team` | 0.39 | One log-seeded narrow-width pass: ~3x cheaper than `locate`, conservative (within 1-2x of it, never below). Bulk NN-database generation. |
 | `robust_ad`, `truth` | extended | gpu_backfill | `mps_team` | higher | Reference tiers above `locate` (`truth` adds an `N_BASIS` ladder; ~34 min per DIII-D profile at nb32). Validation only. |
-| `grid` on CPU | `w >= 1` | cpu_10N / cpu_1N | pmap | 13.6 | Same result as GPU `grid`, ~28x the node-hours. |
+| `grid` on CPU | `w >= 1` | cpu_10N / cpu_1N | pmap | 2.81 | Same result as GPU `grid`, ~6x the node-hours (1.14x the Fortran run). |
 
 With the ballooning-width physics floor `WIDTH_FLOOR = 0.5` the extended solvers search a bounded box: they
 land 1-4x below `grid` (not the up-to-16x of the earlier unbounded search) and cost 20-50 % less than before.

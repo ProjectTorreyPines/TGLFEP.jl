@@ -51,16 +51,16 @@ elsewhere). `:ad :wide` stays within ~1–1.8× of `:ad :locate` and never below
 single pass misses the located optimum at IR 117, 3.9×, and lands above `grid` at IR 22).
 Colors and legend order match the node-hours plot below for quick cross-reference.
 
-![UCP node-hours vs N_BASIS](https://raw.githubusercontent.com/ProjectTorreyPines/TGLFEP.jl/master/docs/plots/ucp_scan20_timing_nodehours.png?v=3)
+![UCP node-hours vs N_BASIS](https://raw.githubusercontent.com/ProjectTorreyPines/TGLFEP.jl/master/docs/plots/ucp_scan20_timing_nodehours.png?v=4)
 
 Absolute node-hours at `N_BASIS=32`, each solver on its fastest layout (Fortran
 `-n 1280` on 10 CPU nodes; `grid`/`:ad :only` on 5 MPS GPU nodes; `:ad
 :locate`/`:ad :wide` on a 1-node backfill with 4 GPU workers draining a 20-radius
 queue): Fortran ≈2.46; `:ad :only` ≈0.28, `:ad :wide` ≈0.39, `grid` ≈0.49,
 `:ad :locate` ≈1.16 — so **every GPU tier beats the fully-parallel Fortran**
-(~8.9× / ~6.3× / ~5.0× / ~2.1×). Julia `:grid` on **CPU** (≈13.6, same 10 nodes as
-Fortran) is ~5.5× *slower* than Fortran: the GPU eigensolver is what makes the Julia
-port competitive. The GPU advantage *grows* with `N_BASIS` (Fortran is cheaper at
+(~8.9× / ~6.3× / ~5.0× / ~2.1×). Julia `:grid` on **CPU** (≈2.81, same 10 nodes as
+Fortran) costs 1.14× the Fortran run, so it is the GPU eigensolver that puts the Julia
+port ahead. The GPU advantage *grows* with `N_BASIS` (Fortran is cheaper at
 `N_BASIS = 8`, break-even is near 16, and the GPU pulls ~5–9× ahead by 32) as the
 eigenmatrix grows: at `N_BASIS=48` (Fortran ≈8.15 node-hours) the margins are
 `:grid` **~7.1×** (≈1.14), `:ad :only` **~9.5×** (≈0.86), `:ad :wide` **~7.5×**
@@ -95,16 +95,17 @@ basis dynamically, so the Julia solvers run any `N_BASIS` unmodified.
 
 | N_BASIS | Fortran CPU (s) | Julia CPU (s) | Julia GPU MPS (s) | GPU speedup vs Fortran (wallclock) |
 |--------:|----------------:|--------------:|------------------:|-----------------------------------:|
-| 8  | 26.2   | 113.3   | 113.0 | 0.23× |
-| 16 | 111.5  | 650.4   | 158.0 | 0.71× |
-| 32 | 886.9  | 4893.2  | 353.0 | **2.51×** |
-| 48 | 2933.5 | 19255.8 | 821.0 | **3.57×** |
+| 8  | 26.2   | 43.8    | 113.0 | 0.23× |
+| 16 | 111.5  | 140.9   | 158.0 | 0.71× |
+| 32 | 886.9  | 1010.4  | 353.0 | **2.51×** |
+| 48 | 2933.5 | 3208.3  | 821.0 | **3.57×** |
 
 (Wallclock here compares a **5-node** GPU run to a **10-node** `-n 1280` Fortran run
 — *half* the nodes — so it understates the GPU, yet it still wins 2.5× at
 `N_BASIS=32` and 3.6× at 48; the fair node-count-normalized margins are ~5.0× and
-~7.1×. Julia `:grid` on CPU, on the same 10 nodes as Fortran, is ~4–7×
-*slower* at every `N_BASIS`, so the GPU is doing the heavy lifting. The 48
+~7.1×. Julia `:grid` on CPU, on the same 10 nodes as Fortran, takes 1.1–1.7×
+the Fortran wallclock (1.67× at `N_BASIS=8`, where ~17 s of worker start-up dominates; 1.14× at
+32 and 1.09× at 48), so the GPU is doing the heavy lifting. The 48
 Fortran time uses the `nb=48` rebuild described above.)
 
 **`:ad :only` (bare `w≥1` AD, no faithful confirm)**: Julia GPU (5 A100 nodes,
@@ -127,8 +128,9 @@ is the *same* `ad` solver run two ways: on an **MPS team** instead of threads it
 so team-spawn/remote-call overhead never amortizes. **Rule of thumb: `grid` → MPS,
 `ad` → threads.**
 
-Data: `docs/plots/ucp_scan20_timing.csv` (2026-10 campaign; the Julia CPU `N_BASIS=48` row is
-filled in when that run completes). Reproduce with
+Data: `docs/plots/ucp_scan20_timing.csv` (2026-10 campaign; the Julia CPU column was re-measured
+2026-11-10 with `slurm/tglfep_julia_cpu_10N.sbatch`, after the CPU path began reusing its solver
+buffers and pinning one thread per physical core). Reproduce with
 `dev/timing/submit_ucp_scan20.sh` (Fortran `-n 1280` + all GPU tiers). The
 smaller DIII-D verification case (bit-for-bit Fortran match) is in
 [`docs/README_DIII-D_example.md`](docs/README_DIII-D_example.md).
