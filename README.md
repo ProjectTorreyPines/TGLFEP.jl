@@ -165,4 +165,4 @@ solver design and search bounds: [`docs/AD_SOLVERS_AND_SEARCH_BOUNDS.md`](docs/A
 
 If this software contributes to an academic publication, please refer to it as **TGLFEP.jl** and cite it as follows:
 
-> T.F. Neiser, D. Sun, B. Agnew, W. Hoffman, J. Towle, M. Trifoglio, S. Guizzo, J. Lestz, K. Callahan, T. Slendebroek, O. Meneghini, B.C. Lyons, A. Ghiozzi, J. McClenaghan, M. Yoo, N. Shi, S. Smith and E. Bass, _TGLFEP.jl: A GPU-accelerated, auto-differentiable Julia port of TGLF-EP for Alfvén eigenmode-driven energetic-particle transport_, APS Meeting Abstracts (2026)
+> T.F. Neiser, D. Sun, B. Agnew, W. Hoffman, J. Towle, M. Trifoglio, S. Guizzo, J. Lestz, K. Callahan, T. Slendebroek, O. Meneghini, B.C. Lyons, A. Ghiozzi, J. McClenaghan, M. Yoo, N. Shi, S. Smith and E. Bass, _TJLF-EP: A GPU-accelerated, auto-differentiable Julia port of TGLF-EP for Alfvén eigenmode-driven energetic-particle transport_, APS Meeting Abstracts (2026)
