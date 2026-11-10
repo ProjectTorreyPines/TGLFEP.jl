@@ -27,6 +27,30 @@ function _scalefactor_factor_line(fac::T, g::AbstractVector{T}, f::AbstractVecto
     return join(parts)
 end
 
+# Process-wide stock of TJLF.LSWorkspace buffers for the threaded CPU combo scan. A worker
+# task borrows one for a round of combos and hands it back, so the number alive tracks the
+# number of combos actually running at once (about nthreads()), also when several radii are
+# scanned concurrently in one process. The stock is dropped when the last active scan ends,
+# so a long-lived session does not keep the memory.
+const _WS_LOCK = ReentrantLock()
+const _WS_FREE = TJLF.LSWorkspace{Float64}[]
+const _WS_SCANS = Ref(0)
+
+# false = do not reuse (GPU solves, non-Float64 element types, or TGLFEP_JULIA_WORKSPACE=0)
+_use_combo_workspaces(::Type{T}, use_gpu::Bool) where {T<:Real} =
+    !use_gpu && T === Float64 && get(ENV, "TGLFEP_JULIA_WORKSPACE", "1") != "0"
+
+_ws_scan_begin!() = lock(() -> (_WS_SCANS[] += 1; nothing), _WS_LOCK)
+function _ws_scan_end!()
+    lock(_WS_LOCK) do
+        _WS_SCANS[] -= 1
+        _WS_SCANS[] <= 0 && (_WS_SCANS[] = 0; empty!(_WS_FREE))
+        nothing
+    end
+end
+_ws_borrow!() = lock(() -> isempty(_WS_FREE) ? TJLF.LSWorkspace{Float64}() : pop!(_WS_FREE), _WS_LOCK)
+_ws_return!(ws::TJLF.LSWorkspace{Float64}) = lock(() -> (push!(_WS_FREE, ws); nothing), _WS_LOCK)
+
 # One ky/width/factor combo of the inner scan. Pure w.r.t. shared state: it deepcopies
 # inputsEP, runs TJLFEP_ky, and returns everything the caller needs to scatter back into
 # the shared result arrays. Kept allocation-light (only NMODES-length vectors + a few
@@ -35,7 +59,8 @@ function _kw_combo(i::Int, k::Int, k_max::Int, nfactor::Int, nefwid::Int,
                    factor::AbstractVector{T}, efwid::AbstractVector{T}, kyhat::AbstractVector{T},
                    inputsEP::Options{T}, inputsPR::profile{T},
                    ikyhat_write::Int, iefwid_write::Int, ifactor_write::Int,
-                   printout::Bool; use_gpu::Bool = false, mode_in::Int = 2) where {T<:Real}
+                   printout::Bool; use_gpu::Bool = false, mode_in::Int = 2,
+                   workspace::Union{Nothing,TJLF.LSWorkspace} = nothing) where {T<:Real}
     local_inputsEP = deepcopy(inputsEP)  # thread/process-local; avoids races on FACTOR_IN/KYHAT_IN/WIDTH_IN/LKEEP/etc.
 
     l_wavefunction_out = 0
@@ -68,7 +93,7 @@ function _kw_combo(i::Int, k::Int, k_max::Int, nfactor::Int, nefwid::Int,
     # 4 = thermal+EP gradients on + FILTER=2 for the PROCESS_IN=6 ITG/TEM variant).
     gamma_out, freq_out, inputTJLF, _, wavefunction_buffer, dep_out, ep_flux_out =
         TJLFEP_ky(local_inputsEP, inputsPR, str_wf_file, l_wavefunction_out; eigen_cache=nothing,
-                  use_gpu=use_gpu, mode_in_override=mode_in)
+                  use_gpu=use_gpu, mode_in_override=mode_in, workspace=workspace)
 
     NM = local_inputsEP.NMODES
     return (
@@ -371,6 +396,10 @@ function kwscale_scan(inputsEP::Options{T}, inputsPR::profile{T}, printout::Bool
     _map_wall = 0.0
     _ser_wall = 0.0
     _t_scan = _probe ? time_ns() : UInt64(0)
+    # Reuse TJLF solver workspaces in the threaded CPU scan (see _WS_FREE). GPU and
+    # team/batched inners keep allocating per call.
+    use_ws = _use_combo_workspaces(T, use_gpu)
+    use_ws && _ws_scan_begin!()
     for k = 1:k_max
         # k doesn't use Threads!
         fill!(factor, T(NaN))
@@ -429,10 +458,24 @@ function kwscale_scan(inputsEP::Options{T}, inputsPR::profile{T}, printout::Bool
         else
             results = Vector{Any}(undef, nkwf)
             TJLF.with_blas_threads(1) do
-                Threads.@threads for i = 1:nkwf
-                    results[i] = _kw_combo(i, k, k_max, nfactor, nefwid, factor, efwid, kyhat,
-                                           inputsEP, inputsPR, ikyhat_write, iefwid_write, ifactor_write,
-                                           printout; use_gpu=use_gpu, mode_in=mode_in)
+                # nthreads() worker tasks pull combo indices from a shared counter (same
+                # dynamic load balancing as a plain threaded loop). Each worker keeps ONE
+                # solver workspace for the whole round, so the big eigenmatrix buffers are
+                # reused across combos instead of being reallocated for each one.
+                next = Threads.Atomic{Int}(1)
+                Threads.@threads for c = 1:min(Threads.nthreads(), nkwf)
+                    ws = use_ws ? _ws_borrow!() : nothing
+                    try
+                        while true
+                            i = Threads.atomic_add!(next, 1)
+                            i > nkwf && break
+                            results[i] = _kw_combo(i, k, k_max, nfactor, nefwid, factor, efwid, kyhat,
+                                                   inputsEP, inputsPR, ikyhat_write, iefwid_write, ifactor_write,
+                                                   printout; use_gpu=use_gpu, mode_in=mode_in, workspace=ws)
+                        end
+                    finally
+                        ws === nothing || _ws_return!(ws)
+                    end
                 end
             end
         end
@@ -711,6 +754,7 @@ function kwscale_scan(inputsEP::Options{T}, inputsPR::profile{T}, printout::Bool
 
         _probe && (_ser_wall += (time_ns() - _t_ser) / 1e9)
     end # end of k
+    use_ws && _ws_scan_end!()
 
     if _probe
         _tot = (time_ns() - _t_scan) / 1e9

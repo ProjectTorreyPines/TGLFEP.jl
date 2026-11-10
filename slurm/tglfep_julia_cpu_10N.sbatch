@@ -21,7 +21,7 @@
 #SBATCH -N 10
 #SBATCH --ntasks=20
 #SBATCH --ntasks-per-node=2
-#SBATCH --cpus-per-task=64
+#SBATCH --cpus-per-task=128           # logical CPUs = 64 physical cores per worker
 #SBATCH -t 02:00:00
 #SBATCH -J tglfep_julia_cpu_10N
 #SBATCH -o tglfep_julia_cpu_10N_%j.out
@@ -62,7 +62,9 @@ TGLFEP_JULIA_NXGRID="${TGLFEP_JULIA_NXGRID:-}"           # "" -> max(N_BASIS, 32
 TGLFEP_JULIA_DEBUG="${TGLFEP_JULIA_DEBUG:-0}"            # 1 prints matched [*_DBG] lines (Fortran comparison)
 
 # ---- Parallel layout ----
-JULIA_WORKER_THREADS="${JULIA_WORKER_THREADS:-${SLURM_CPUS_PER_TASK:-64}}"   # threads per worker (the ky loop is threaded)
+# One Julia thread per PHYSICAL core: Slurm CPUs are hyperthreads here, so a worker with
+# --cpus-per-task=128 owns 64 cores. Running 64 threads on 64 logical CPUs (32 cores) is ~2x slower.
+JULIA_WORKER_THREADS="${JULIA_WORKER_THREADS:-$(( ${SLURM_CPUS_PER_TASK:-128} / 2 ))}"   # threads per worker (the ky loop is threaded)
 TGLFEP_JULIA_INSTANTIATE="${TGLFEP_JULIA_INSTANTIATE:-0}"   # 1 = Pkg.instantiate()+precompile() in the job first (JIT from a fresh checkout only;
                                                 #     never against the read-only CFS env)
 

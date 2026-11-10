@@ -14,7 +14,8 @@ function TJLFEP_ky(inputsEP::Options{T}, inputsPR::profile{T}, str_wf_file::Stri
                    eigen_cache::Union{Vector{<:Complex}, Nothing} = nothing,
                    use_gpu::Bool = false,
                    mode_in_override::Union{Nothing,Int} = nothing,
-                   ky_model_override::Union{Nothing,Int} = nothing) where {T<:Real} #, factor_in::Int64, kyhat_in::Int64, width_in::Int64)
+                   ky_model_override::Union{Nothing,Int} = nothing,
+                   workspace::Union{Nothing,TJLF.LSWorkspace} = nothing) where {T<:Real} #, factor_in::Int64, kyhat_in::Int64, width_in::Int64)
     _pb = _probe_on()
     _t_ky = _pb ? time_ns() : UInt64(0)
 # function TJLFEP_ky(inputsEP::Options{T}, inputsPR::profile{T}, str_wf_file::String, l_wavefunction_out::Int) where {T<:Real} #, factor_in::Int64, kyhat_in::Int64, width_in::Int64)
@@ -104,10 +105,10 @@ function TJLFEP_ky(inputsEP::Options{T}, inputsPR::profile{T}, str_wf_file::Stri
         if T === Float64
             if _pb
                 _tr = time_ns()
-                result = TJLF.run(inputTJLF; use_gpu=use_gpu)
+                result = TJLF.run(inputTJLF; use_gpu=use_gpu, workspace=workspace)
                 Threads.atomic_add!(_PROBE_RUN, (time_ns() - _tr) / 1e9)
             else
-                result = TJLF.run(inputTJLF; use_gpu=use_gpu)
+                result = TJLF.run(inputTJLF; use_gpu=use_gpu, workspace=workspace)
             end
         else
             quit()
