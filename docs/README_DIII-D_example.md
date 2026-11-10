@@ -116,8 +116,7 @@ profile at `N_BASIS=32`) is documented in
 Data: `docs/plots/scan20_timing.csv` (GPU tiers measured 2026-10-31/11-01 on v2.0.18 with
 `WIDTH_FLOOR = 0.5`; the Fortran rows for `N_BASIS ≤ 16` are the 2026-07
 measurement, which the width floor does not touch, and its `N_BASIS = 32` row is from
-2026-10-24; the Julia-CPU column was re-measured 2026-11-10 with
-`slurm/tglfep_julia_cpu_10N.sbatch`, after the CPU path began reusing its solver buffers and
-pinning one thread per physical core). Reproduce: grid sweep with
+2026-10-24; the Julia-CPU column is from 2026-11-10 with
+`slurm/tglfep_julia_cpu_10N.sbatch`). Reproduce: grid sweep with
 `dev/timing/submit_timing_vs_nbasis.sh`, AD sweep with
 `dev/timing/submit_timing_vs_nbasis_ad.sh` (capability 4).

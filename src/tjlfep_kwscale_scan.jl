@@ -460,8 +460,7 @@ function kwscale_scan(inputsEP::Options{T}, inputsPR::profile{T}, printout::Bool
             TJLF.with_blas_threads(1) do
                 # nthreads() worker tasks pull combo indices from a shared counter (same
                 # dynamic load balancing as a plain threaded loop). Each worker keeps ONE
-                # solver workspace for the whole round, so the big eigenmatrix buffers are
-                # reused across combos instead of being reallocated for each one.
+                # solver workspace for the whole round.
                 next = Threads.Atomic{Int}(1)
                 Threads.@threads for c = 1:min(Threads.nthreads(), nkwf)
                     ws = use_ws ? _ws_borrow!() : nothing
