@@ -65,6 +65,7 @@ TGLFEP_JULIA_DEBUG="${TGLFEP_JULIA_DEBUG:-0}"            # 1 prints matched [*_D
 # One Julia thread per PHYSICAL core: Slurm CPUs are hyperthreads here, so a worker with
 # --cpus-per-task=128 owns 64 cores. Running 64 threads on 64 logical CPUs (32 cores) is ~2x slower.
 JULIA_WORKER_THREADS="${JULIA_WORKER_THREADS:-$(( ${SLURM_CPUS_PER_TASK:-128} / 2 ))}"   # threads per worker (the ky loop is threaded)
+export TGLFEP_JULIA_PIN_THREADS="${TGLFEP_JULIA_PIN_THREADS:-1}"   # 1 = pin each worker thread to its own physical core (avoids the ~1.4x slow workers); 0 = leave to the OS
 TGLFEP_JULIA_INSTANTIATE="${TGLFEP_JULIA_INSTANTIATE:-0}"   # 1 = Pkg.instantiate()+precompile() in the job first (JIT from a fresh checkout only;
                                                 #     never against the read-only CFS env)
 

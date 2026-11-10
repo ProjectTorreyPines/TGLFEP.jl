@@ -12,6 +12,7 @@
 #   OUT_DIR                                 output directory (created)
 #   SOLVER, REFINE_ROUNDS                   grid | ad | robust_ad | truth ; robust_ad/truth rounds
 #   JULIA_WORKER_THREADS                    threads per worker (default: SLURM_CPUS_PER_TASK)
+#   TGLFEP_JULIA_PIN_THREADS                1 (default) pins each worker's threads to physical cores; 0 leaves them to the OS
 #   TGLFEP_JULIA_SYSIMAGE                         optional CPU sysimage for the workers ("" = JIT)
 #   TGLFEP_JULIA_INSTANTIATE=1                    run Pkg.instantiate()+precompile() first (never
 #                                           against the read-only published CFS env)
@@ -82,7 +83,9 @@ if haskey(ENV, "SLURM_JOB_ID") || haskey(ENV, "SLURM_JOBID")
     # launch_timeout: default 60s is too tight when the depot precompile cache is cold
     # (a Project/Manifest bump since the sysimage bake triggers a fresh precompile pass).
     addprocs(SlurmManager(launch_timeout=1200.0); exeflags=exeflags, env=worker_env)
+    pin_workers = get(ENV, "TGLFEP_JULIA_PIN_THREADS", "1") != "0"
 else
+    pin_workers = false   # local workers share one CPU set: pinning would stack them on the same cores
     addprocs(min(SCAN_N, Sys.CPU_THREADS ÷ max(THREADS_PER_WORKER, 1), 4); exeflags=exeflags, env=worker_env)
 end
 @everywhere begin
@@ -90,6 +93,12 @@ end
     using TJLF
     using LinearAlgebra
     BLAS.set_num_threads(1)
+end
+# One Julia thread per physical core on every worker (each Slurm task has its own CPU set).
+# Unpinned, a few workers per run land badly and take ~1.4x longer, which sets the wall time.
+if pin_workers && isdefined(TJLFEP, :pin_threads_to_cores!)
+    pins = asyncmap(w -> remotecall_fetch(TJLFEP.pin_threads_to_cores!, w), workers())   # all workers at once
+    logmsg("thread pinning: ", join(sort(unique(pins)), " | "))
 end
 logmsg("TIMING_RESULT backend=julia device=cpu path=distributed phase=worker_setup seconds=$(round(time() - tw; digits=3)) workers=$(nworkers())")
 

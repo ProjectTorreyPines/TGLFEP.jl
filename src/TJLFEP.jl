@@ -25,6 +25,7 @@ include("tjlfep_nls_extensions.jl")
 include("tjlfep_read_inputs.jl")
 include("tjlfep_debug.jl")
 include("EXPROconst.jl")
+include("tjlfep_pin_threads.jl")
 include("tjlfep_ky.jl")
 include("tjlfep_kwscale_scan.jl")
 include("tjlfep_TM.jl")
@@ -103,6 +104,7 @@ export MarginalQLData, extract_marginal_ql, build_alpha_ql_modes
 export ql_flux_scan_at_marginal, diff_star_from_D_W
 export populate_tjlfep_profile!
 export run_gacode_scan_task, finalize_gacode_scan, slurm_array_task_id
+export pin_threads_to_cores!
 
 export TJLFEP_generate_input, readline_values
 
