@@ -11,7 +11,8 @@
 #     "${JULIA[@]}"          julia --startup-file=no --project=$PROJECT [--sysimage=$SYSIMAGE]
 #     SCAN_N                 read from the input.TGLFEP
 #     TGLFEP_JULIA_ROOT PROJECT SYSIMAGE OUT_DIR ...  exported for the Julia drivers
-# and the helpers tglfep_julia_mps_quit (GPU) and tglfep_julia_merge.
+# and the helpers tglfep_julia_mps_quit (GPU), tglfep_julia_merge and tglfep_julia_finish (the job's
+# exit code: a template must end on tglfep_julia_finish, never on a bare echo).
 #
 # Variables consumed (set them in the template's CONFIG block; all have fallbacks):
 #     DEVICE                 gpu | cpu                                   (required)
@@ -211,4 +212,26 @@ tglfep_julia_merge() {
     echo "=== merging ${OUT_DIR} ==="
     USE_GPU=0 stdbuf -oL -eL "${JULIA[@]}" -t "${MERGE_THREADS:-8}" \
         "${TGLFEP_JULIA_ROOT}/slurm/common/merge_gacode_scan20_array.jl"
+}
+
+# Last line of every template: turn the exit codes of its steps into the job's exit code.
+#     tglfep_julia_finish "<closing line>" <step>=<exit code> [<step>=<exit code> ...]
+# All zero -> print the closing line. Otherwise say which step failed (in .out and .err) and
+# exit with the first non-zero code, so Slurm records the job as FAILED and `afterok`
+# dependents do not start. Without this a template ends on an echo and always exits 0.
+tglfep_julia_finish() {
+    local closing="$1" step code rc=0 failed=""
+    shift
+    for step in "$@"; do
+        code="${step##*=}"
+        [[ "${code}" == "0" ]] && continue
+        failed="${failed:+${failed}, }${step%%=*} (exit code ${code})"
+        [[ "${rc}" == "0" ]] && rc="${code}"
+    done
+    if [[ "${rc}" != "0" ]]; then
+        echo "=== FAILED: ${failed}; outputs in ${OUT_DIR:-OUT_DIR} are incomplete ==="
+        echo "ERROR: ${failed}; outputs in ${OUT_DIR:-OUT_DIR} are incomplete" >&2
+        exit "${rc}"
+    fi
+    echo "${closing}"
 }

@@ -89,4 +89,6 @@ cd "${TGLFEP_JULIA_ROOT}"
 t_start=$(date +%s)
 # The master runs here; it spawns one worker per Slurm task via srun (SlurmClusterManager).
 stdbuf -oL -eL "${JULIA[@]}" -t 8 "${TGLFEP_JULIA_ROOT}/slurm/common/run_scan_cpu_distributed.jl"
-echo "=== done in $(( $(date +%s) - t_start )) s; out.TGLFEP + sfmin_scan.txt + alpha_*_crit.input in ${OUT_DIR} ==="
+scan_rc=$?
+tglfep_julia_finish "=== done in $(( $(date +%s) - t_start )) s; out.TGLFEP + sfmin_scan.txt + alpha_*_crit.input in ${OUT_DIR} ===" \
+    scan="${scan_rc}"

@@ -107,8 +107,12 @@ srun --export=ALL --label -n "${SLURM_NTASKS}" --ntasks-per-node=4 --cpu-bind=co
     "${TGLFEP_JULIA_ROOT}/slurm/common/mps-scan-wrapper.sh" \
     stdbuf -oL -eL "${JULIA[@]}" -t "${JULIA_WORKER_THREADS}" \
     "${TGLFEP_JULIA_ROOT}/slurm/common/run_gacode_scan20_mps_task.jl"
-echo "=== scan done in $(( $(date +%s) - t_start )) s (incl. worker spawn + image load) ==="
+scan_rc=$?
+echo "=== scan step ended (exit code ${scan_rc}) after $(( $(date +%s) - t_start )) s (incl. worker spawn + image load) ==="
 
 tglfep_julia_mps_quit
+# Merge even after a failed scan step: its error names the radii whose task_<i>.jls is missing.
 tglfep_julia_merge
-echo "=== done; per-radius task_*.jls + sfmin_scan.txt + alpha_*_crit.input in ${OUT_DIR} ==="
+merge_rc=$?
+tglfep_julia_finish "=== done; per-radius task_*.jls + sfmin_scan.txt + alpha_*_crit.input in ${OUT_DIR} ===" \
+    scan="${scan_rc}" merge="${merge_rc}"

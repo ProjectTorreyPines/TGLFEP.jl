@@ -42,4 +42,5 @@ source "${TGLFEP_JULIA_ROOT}/slurm/common/tglfep_julia_env.inc.sh" \
 tglfep_julia_setup
 cd "${TGLFEP_JULIA_ROOT}"
 tglfep_julia_merge
-echo "=== merged -> ${OUT_DIR}/sfmin_scan.txt ==="
+merge_rc=$?
+tglfep_julia_finish "=== merged -> ${OUT_DIR}/sfmin_scan.txt ===" merge="${merge_rc}"

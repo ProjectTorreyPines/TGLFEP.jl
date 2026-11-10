@@ -99,7 +99,9 @@ Each run writes to `OUT_DIR` (default `runs/<template>_<jobid>_tasks/`, gitignor
 
 Slurm logs `tglfep_julia_<template>_<jobid>.{out,err}` land where you submitted (the repo root;
 gitignored). The `.out` starts with a banner echoing the resolved project, sysimage, inputs
-and solver settings.
+and solver settings, and ends with `=== done ... ===` on success. If the scan or the merge
+fails, the last line is `=== FAILED: <step> (exit code <n>) ... ===` instead and the job exits
+with that code, so `sacct` shows `FAILED` and an `--dependency=afterok` job does not start.
 
 **Re-merging.** The GPU templates merge the `task_*.jls` at the end of the job. If that step
 did not run, `OUT_DIR=runs/<run>_tasks sbatch slurm/tglfep_julia_merge.sbatch`, or on a login node:
@@ -158,7 +160,7 @@ Your depot is never replaced. Details and the artifact mechanism: [`docs/SYSIMAG
 
 | File | Role |
 |---|---|
-| `tglfep_julia_env.inc.sh` | sourced by every template: modules, depot order, root resolution, sysimage/project pairing, input checks, env export, merge |
+| `tglfep_julia_env.inc.sh` | sourced by every template: modules, depot order, root resolution, sysimage/project pairing, input checks, env export, merge, job exit code |
 | `run_gacode_scan20_mps_task.jl` | GPU driver: one radius per task (or the backfill queue), MPS worker team per GPU |
 | `mps-scan-wrapper.sh` | per-node MPS daemon start (daemon-first), GPU pinning, `SCAN_INDEX` |
 | `merge_gacode_scan20_array.jl` | merges `task_*.jls` into `sfmin_scan.txt` + `alpha_*_crit.input` |
