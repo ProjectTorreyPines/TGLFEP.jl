@@ -1,0 +1,5 @@
+# Preference-only environment that tglfep_julia_env.inc.sh puts at the end of JULIA_LOAD_PATH.
+# It carries the one site preference the runs need (LocalPreferences.toml next to this file):
+# CUDA.jl uses the cudatoolkit/12.9 module's libraries instead of downloading its own.
+[deps]
+CUDA_Runtime_jll = "76a88914-d11a-5bdc-97e0-2f5a05c973a2"

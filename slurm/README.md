@@ -131,8 +131,22 @@ once per GPU on backfill). The `SYSIMAGE` line decides:
   those env projects; they are read-only.
 - **`SYSIMAGE=""` (JIT).** Runs `--project=<your checkout>` with whatever your `Manifest.toml`
   resolves. Use this after editing `src/` (a sysimage silently runs the baked code), or if you
-  are not in m3739. Instantiate once first:
-  `julia --project=. -e 'using Pkg; Pkg.instantiate(); Pkg.precompile()'`.
+  are not in m3739. Instantiate once first, with the same package load path the templates use
+  (otherwise the job finds the caches stale and recompiles):
+
+  ```bash
+  module load cudatoolkit/12.9 julia/1.11.7
+  export JULIA_LOAD_PATH="@:@v#.#:@stdlib:$PWD/slurm/common/prefs_cuda12.9"
+  julia --project=. -e 'using Pkg; Pkg.instantiate(); Pkg.precompile()'
+  ```
+
+**Package load path.** `module load julia` appends a site environment to `JULIA_LOAD_PATH`
+that pins CUDA.jl to the loaded cudatoolkit and switches every package to the system Cray MPI.
+The MPI part makes `HDF5_jll` load the system OpenSSL next to the newer one the Julia packages
+ship, and its precompile then fails. The include therefore replaces the site environment with
+`common/prefs_cuda12.9`, which keeps only the CUDA pin; a `CUDA_Runtime_jll` preference in
+your own project still takes precedence. `TGLFEP_JULIA_LOAD_PATH=<path>` overrides the load
+path; `TGLFEP_JULIA_LOAD_PATH=module` leaves the module's untouched.
 - **Your own bake.** `cd build && sbatch sysimage/batch_build_gpu_sysimage_fileonly.sh`, then
   `SYSIMAGE=build/TGLFEP_JULIA_gpu_sysimage.so` (see [`build/README.md`](../build/README.md)).
 
@@ -151,6 +165,7 @@ Your depot is never replaced. Details and the artifact mechanism: [`docs/SYSIMAG
 | `SCAN_N ... must equal the number of Slurm tasks` | 5N/10N run one radius per task. Use an `input_scan20_*` file, or the backfill/1N template. |
 | `PROJECT=... has no Manifest.toml` | JIT from a fresh checkout: run the `Pkg.instantiate()` line above on a login node first. |
 | `Artifact "OpenSSL" was not found` | A sysimage without its depot: keep the default `TGLFEP_JULIA_DEPOT`/`CFS_DIR`, do not clobber `JULIA_DEPOT_PATH` in your shell init. |
+| `libcrypto.so.3: version OPENSSL_3.3.0 not found`, `✗ HDF5_jll` | Julia was started with the module's own `JULIA_LOAD_PATH` (by hand, or `TGLFEP_JULIA_LOAD_PATH=module`). Use the load path from "With or without a sysimage". |
 | `GPU run needs CUDA >= 12.6` | Wrong module; the include loads `cudatoolkit/12.9`, check nothing in your shell init overrides it. |
 | Workers hang in `using CUDA` | `JULIA_CUDA_USE_COMPAT` must be `false` for MPS clients; the include sets it, do not unset it. |
 | Node OOM at `N_BASIS=48` | `MPS_TEAM=4` and `#SBATCH -C gpu&hbm80g`. |
@@ -160,7 +175,8 @@ Your depot is never replaced. Details and the artifact mechanism: [`docs/SYSIMAG
 
 | File | Role |
 |---|---|
-| `tglfep_julia_env.inc.sh` | sourced by every template: modules, depot order, root resolution, sysimage/project pairing, input checks, env export, merge, job exit code |
+| `tglfep_julia_env.inc.sh` | sourced by every template: modules, depot order, root resolution, package load path, sysimage/project pairing, input checks, env export, merge, job exit code |
+| `prefs_cuda12.9/` | preference-only environment on the load path: CUDA.jl uses the `cudatoolkit/12.9` module |
 | `run_gacode_scan20_mps_task.jl` | GPU driver: one radius per task (or the backfill queue), MPS worker team per GPU |
 | `mps-scan-wrapper.sh` | per-node MPS daemon start (daemon-first), GPU pinning, `SCAN_INDEX` |
 | `merge_gacode_scan20_array.jl` | merges `task_*.jls` into `sfmin_scan.txt` + `alpha_*_crit.input` |

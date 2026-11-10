@@ -19,6 +19,7 @@
 #     TGLFEP_JULIA_ROOT            the TJLFEP checkout                          (default: SLURM_SUBMIT_DIR)
 #     CFS_DIR                shared m3739 tree with images/envs/depot    (default below)
 #     TGLFEP_JULIA_DEPOT           extra read-only depot to append              (default: $CFS_DIR/depot)
+#     TGLFEP_JULIA_LOAD_PATH       JULIA_LOAD_PATH override, "module" = keep the module's (see tglfep_julia_setup_load_path)
 #     SYSIMAGE               prebuilt sysimage, "" = JIT
 #     PROJECT                julia --project; "" = auto (see tglfep_julia_setup_sysimage)
 #     STAGE                  1 = sbcast the sysimage to node-local /tmp (multi-node GPU)
@@ -68,6 +69,33 @@ tglfep_julia_load_modules() {
         # Required: CUDA.jl's forward-compat driver shim hangs in cuInit for MPS clients on Perlmutter.
         export JULIA_CUDA_USE_COMPAT=false
     fi
+}
+
+# Package load path. `module load julia` appends a site preference environment that (a) pins
+# CUDA.jl to the loaded cudatoolkit and (b) switches every package to the system Cray MPI.
+# (b) breaks loading: HDF5_jll (a dependency, never used with MPI here) then pulls in the Cray
+# libmpi and with it the system libssl/libcrypto, which clash with the newer OpenSSL that the
+# Julia packages ship ("version OPENSSL_3.3.0 not found" when HDF5_jll precompiles). So drop
+# the site environment and keep only (a), from the preference environment shipped next to this
+# file. A project that sets its own CUDA_Runtime_jll preference (the published env_lean /
+# env_full do) still wins, since the project comes first in the path.
+#   TGLFEP_JULIA_LOAD_PATH   use this JULIA_LOAD_PATH verbatim instead ("module" = leave the
+#                            module's path untouched)
+tglfep_julia_setup_load_path() {
+    local prefs="${TGLFEP_JULIA_ROOT}/slurm/common/prefs_cuda12.9"
+    case "${TGLFEP_JULIA_LOAD_PATH:-}" in
+        module) return 0 ;;
+        "")     ;;
+        *)      export JULIA_LOAD_PATH="${TGLFEP_JULIA_LOAD_PATH}"; return 0 ;;
+    esac
+    JULIA_LOAD_PATH="@:@v#.#:@stdlib"
+    if [[ "${CUDA_MODULE:-cudatoolkit/12.9}" == */12.9* && -f "${prefs}/LocalPreferences.toml" ]]; then
+        JULIA_LOAD_PATH="${JULIA_LOAD_PATH}:${prefs}"
+    elif [[ "${DEVICE}" == "gpu" ]]; then
+        echo "WARNING: CUDA_MODULE='${CUDA_MODULE:-}' is not 12.9: no CUDA toolkit preference is set here;" \
+             "set it in PROJECT's LocalPreferences.toml or pass TGLFEP_JULIA_LOAD_PATH." >&2
+    fi
+    export JULIA_LOAD_PATH
 }
 
 # Depot search path. Order = precedence; the FIRST entry is the only writable one (precompile
@@ -177,6 +205,7 @@ tglfep_julia_banner() {
     echo "PROJECT     = ${PROJECT}"
     echo "SYSIMAGE    = ${SYSIMAGE_DESC}"
     echo "DEPOT       = ${JULIA_DEPOT_PATH}"
+    echo "LOAD_PATH   = ${JULIA_LOAD_PATH:-(julia default)}"
     echo "GACODE_FILE = ${GACODE_FILE}"
     echo "TGLFEP_FILE = ${TGLFEP_FILE}   (SCAN_N=${SCAN_N})"
     echo "OUT_DIR     = ${OUT_DIR}"
@@ -193,6 +222,7 @@ tglfep_julia_setup() {
     [[ -n "${DEVICE:-}" ]] || tglfep_julia_die "set DEVICE=gpu or DEVICE=cpu before sourcing tglfep_julia_env.inc.sh"
     tglfep_julia_resolve_root
     tglfep_julia_load_modules
+    tglfep_julia_setup_load_path
     tglfep_julia_setup_depot
     tglfep_julia_setup_sysimage
     [[ "${DEVICE}" == "gpu" ]] && tglfep_julia_stage_sysimage
