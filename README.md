@@ -30,6 +30,20 @@ nodes) at `N_BASIS=32` on `UCP_complete`; the GPU advantage grows with the eigen
 (see [`docs/BENCHMARKS.md`](docs/BENCHMARKS.md)). `:ad :locate` is the production default
 (also the `ActorTJLFEP` default in FUSE).
 
+**What the extended width search changes.** Critical scale factor vs radius on the reactor
+case (`UCP_complete`, `N_BASIS=32`). `:ad :only` follows stock Fortran (`WIDTH_MIN = 1`);
+`:ad :locate` stays within ~1.3× of Fortran rerun with the same width range (`WIDTH_MIN = 0.5`),
+where the thresholds at mid-radius are up to ~4× lower; `:ad :wide` matches `:locate` except at a few radii.
+
+![SFmin vs radius at equal width range: Fortran vs :ad :locate, :ad :wide, :ad :only](https://raw.githubusercontent.com/ProjectTorreyPines/TGLFEP.jl/master/docs/plots/ucp_equal_width_nb32.png?v=1)
+
+**How the `:ad` solvers find the threshold.** Instead of scanning a fixed grid of scale factors,
+they solve `γ_AE(f) − γ* = 0` by Newton iteration, with the derivative from automatic
+differentiation of the eigenvalue. One DIII-D radius: the root is found in 10 eigensolves, and
+the grid reports the onset 1.8× higher on its coarser `(ky, w, f)` grid.
+
+![Newton root-find on one DIII-D radius vs the Fortran factor grid](https://raw.githubusercontent.com/ProjectTorreyPines/TGLFEP.jl/master/docs/plots/newton_root_find_d3d_ir95_nb32.png?v=1)
+
 Full API reference: [online documentation](https://projecttorreypines.github.io/TGLFEP.jl/dev).
 
 ## Run it on Slurm (Perlmutter)
@@ -151,4 +165,4 @@ solver design and search bounds: [`docs/AD_SOLVERS_AND_SEARCH_BOUNDS.md`](docs/A
 
 If this software contributes to an academic publication, please refer to it as **TGLFEP.jl** and cite it as follows:
 
-> T.F. Neiser, D. Sun, B. Agnew, T. Slendebroek, O. Meneghini, B.C. Lyons, A. Ghiozzi, J. McClenaghan, G. Staebler and J. Candy, _TJLF: The quasi-linear model of gyrokinetic transport TGLF translated to Julia_, APS Meeting Abstracts (2024)
+> T.F. Neiser, D. Sun, B. Agnew, W. Hoffman, J. Towle, M. Trifoglio, S. Guizzo, J. Lestz, K. Callahan, T. Slendebroek, O. Meneghini, B.C. Lyons, A. Ghiozzi, J. McClenaghan, M. Yoo, N. Shi, S. Smith and E. Bass, _TGLFEP.jl: A GPU-accelerated, auto-differentiable Julia port of TGLF-EP for Alfvén eigenmode-driven energetic-particle transport_, APS Division of Plasma Physics Meeting Abstracts (2026)
