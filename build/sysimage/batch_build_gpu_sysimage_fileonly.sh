@@ -28,6 +28,10 @@ umask 007
 
 module load cudatoolkit/12.9
 module load julia/1.11.7
+# Drop the site environment the julia module appends: it switches packages to the system
+# Cray MPI, and HDF5_jll then fails to precompile against the system OpenSSL. The CUDA
+# runtime pin lives in the build project (setup_registry_env.jl).
+export JULIA_LOAD_PATH="@:@v#.#:@stdlib"
 # TGLFEP_JULIA_DEPOT: base depot for the bake. For group-shareable images this MUST be the CFS
 # depot (paths are baked into the image); defaults to the private scratch depot.
 export JULIA_DEPOT_PATH="${TGLFEP_JULIA_DEPOT:-${PSCRATCH}/.julia}"
