@@ -60,6 +60,8 @@ cd "${BUILD_DIR}"
 # ext + FUSE are baked into the image.
 export TGLFEP_JULIA_BUILD_ENV="${TGLFEP_JULIA_BUILD_ENV:-${BUILD_DIR}/sysimage/env_full}"
 export TGLFEP_JULIA_BUILD_VARIANT=full
+# Current FUSE needs PrettyTables 3, which CUDA.jl < 5.9 does not accept.
+export TGLFEP_JULIA_BUILD_CUDA="${TGLFEP_JULIA_BUILD_CUDA:-5.9}"
 
 echo "=== TJLFEP GENERIC GPU sysimage build ==="
 echo "host: $(hostname)  date: $(date)"

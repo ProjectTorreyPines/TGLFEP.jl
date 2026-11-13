@@ -17,6 +17,19 @@ build_env = get(ENV, "TGLFEP_JULIA_BUILD_ENV", "")
 
 Pkg.activate(build_env)
 Pkg.instantiate()
+
+# An old FUSE (resolver fallback on a compat conflict) does not load against current IMAS;
+# fail before the bake instead of an hour into it.
+import TOML
+let fuse = only(info for (_, info) in Pkg.dependencies() if info.name == "FUSE")
+    vfiles = [joinpath(d, "registries", "FuseRegistry", "F", "FUSE", "Versions.toml") for d in DEPOT_PATH]
+    vidx = findfirst(isfile, vfiles)
+    @assert vidx !== nothing "no FuseRegistry Versions.toml for FUSE found in DEPOT_PATH"
+    newest = maximum(VersionNumber.(keys(TOML.parsefile(vfiles[vidx]))))
+    @assert fuse.version == newest "build env has FUSE $(fuse.version), newest registered is $newest; rerun setup_registry_env.jl (TGLFEP_JULIA_BUILD_CUDA >= 5.9)"
+    println("FUSE $(fuse.version) (newest registered)")
+end
+
 using PackageCompiler
 
 create_sysimage(

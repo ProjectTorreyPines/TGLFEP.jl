@@ -13,6 +13,9 @@
 #                                image; the extension and the actor path bake in)
 #   TGLFEP_JULIA_BUILD_VERSION   TJLFEP version to install (e.g. "2.0.14"); default =
 #                          newest version registered in FuseRegistry
+#   TGLFEP_JULIA_BUILD_CUDA      CUDA.jl version spec (default "5.8.5"). The full variant
+#                          needs "5.9" or newer: current FUSE requires PrettyTables 3,
+#                          which CUDA.jl < 5.9 does not accept.
 #
 # CUDA runtime: pinned to the module-provided 12.9 toolkit (`local = "true"`), the
 # validated Perlmutter config. The julia module stacks equivalent preferences keyed on
@@ -83,30 +86,31 @@ println("### Resolve TJLFEP version to install")
 # TJLFEP MUST be added at an explicit version: TJLFEP/TJLF cap CUDA at 5.8.x, and with
 # `CUDA` in the same unversioned Pkg.add the resolver prefers the newest CUDA from
 # General and silently holds TJLFEP back (observed: v2.0.0, which doesn't precompile).
-tglfep_julia_version = String(lstrip(get(ENV, "TGLFEP_JULIA_BUILD_VERSION", ""), 'v'))
-if isempty(tglfep_julia_version)
-    # findfirst, not a bare for-loop assignment: at script top level the loop body is
-    # soft scope, so `vfile = f` would bind a new local and leave the global "" empty
-    vfiles = [joinpath(depot, "registries", "FuseRegistry", "T", "TJLFEP", "Versions.toml")
+function newest_registered(name)
+    vfiles = [joinpath(depot, "registries", "FuseRegistry", string(name[1]), name, "Versions.toml")
               for depot in DEPOT_PATH]
     vidx = findfirst(isfile, vfiles)
-    vfile = vidx === nothing ? "" : vfiles[vidx]
-    @assert !isempty(vfile) "TGLFEP_JULIA_BUILD_VERSION unset and no FuseRegistry Versions.toml found in DEPOT_PATH"
-    tglfep_julia_version = string(maximum(VersionNumber.(keys(TOML.parsefile(vfile)))))
+    @assert vidx !== nothing "no FuseRegistry Versions.toml for $name found in DEPOT_PATH"
+    return maximum(VersionNumber.(keys(TOML.parsefile(vfiles[vidx]))))
 end
+tglfep_julia_version = String(lstrip(get(ENV, "TGLFEP_JULIA_BUILD_VERSION", ""), 'v'))
+if isempty(tglfep_julia_version)
+    tglfep_julia_version = string(newest_registered("TJLFEP"))
+end
+cuda_version = get(ENV, "TGLFEP_JULIA_BUILD_CUDA", "5.8.5")
 println("    TJLFEP $tglfep_julia_version")
 
 println("### Setup $variant build environment in ", build_env)
 Pkg.activate(build_env)
 # TJLF, CUDA, PackageCompiler are TJLFEP deps already; listing them makes them direct
-# deps, importable by name in the bake scripts. CUDA is pinned exactly: TJLFEP's caret
-# compat ("5.8.5" = <6) admits newer CUDA.jl, but 5.8.5 is the config every Perlmutter
-# GPU run and sysimage was validated against. The full variant lists FUSE and the
+# deps, importable by name in the bake scripts. CUDA is pinned (default 5.8.5): TJLFEP's
+# caret compat ("5.8.5" = <6) admits newer CUDA.jl, but 5.8.5 is the config every
+# Perlmutter GPU run and the lean images were validated against. The full variant lists FUSE and the
 # IMAS/GACODE/TurbulentTransport weak-dep trio directly so create_sysimage can bake them
 # and the TJLFEPIMASExt actor path compiles in.
 packages = [Pkg.PackageSpec(name="TJLFEP", version=tglfep_julia_version),
             Pkg.PackageSpec(name="TJLF"),
-            Pkg.PackageSpec(name="CUDA", version="5.8.5"),
+            Pkg.PackageSpec(name="CUDA", version=cuda_version),
             Pkg.PackageSpec(name="PackageCompiler")]
 if variant == "full"
     append!(packages, [Pkg.PackageSpec(name="FUSE"), Pkg.PackageSpec(name="IMAS"),
@@ -120,6 +124,12 @@ deps = Dict(info.name => info.version for (_, info) in Pkg.dependencies())
 @assert string(deps["TJLFEP"]) == tglfep_julia_version "resolver installed TJLFEP $(deps["TJLFEP"]), expected $tglfep_julia_version (co-added dep held it back?)"
 for p in ("TJLF", "CUDA", (variant == "full" ? ("FUSE", "IMAS", "GACODE", "TurbulentTransport") : ())...)
     println("    $p $(deps[p])")
+end
+if variant == "full"
+    # A compat conflict makes the resolver fall back to an old FUSE that no longer loads
+    # against current IMAS; catch it here rather than an hour into the bake.
+    fuse_newest = newest_registered("FUSE")
+    @assert deps["FUSE"] == fuse_newest "resolver installed FUSE $(deps["FUSE"]), newest registered is $fuse_newest (compat conflict, e.g. TGLFEP_JULIA_BUILD_CUDA too old?)"
 end
 
 println("### $variant build environment ready: ", build_env)
