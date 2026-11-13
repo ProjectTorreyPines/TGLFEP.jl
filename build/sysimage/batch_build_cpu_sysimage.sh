@@ -23,6 +23,7 @@ set -euo pipefail
 # New files/dirs (CFS publishes, depot writes) must stay m3739 group-readable.
 umask 007
 
+module load cudatoolkit/12.9
 module load julia/1.11.7
 # Drop the site environment the julia module appends: it switches packages to the system
 # Cray MPI, and HDF5_jll then fails to precompile against the system OpenSSL. The CUDA
